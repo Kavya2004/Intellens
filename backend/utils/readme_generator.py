@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-import google.generativeai as genai
+import anthropic
 import zipfile
 
 # Load .env variables
@@ -52,19 +52,18 @@ def generate_readme(languages, services, file_details, project_name):
 
 
 def generate_ai_project_and_file_summary(languages, services, file_details, project_name):
-    """Use Gemini AI to generate project description and per-file explanations."""
+    """Use Claude AI to generate project description and per-file explanations."""
     
-    api_key = os.getenv("GEMINI_API_KEY")
+    api_key = os.getenv("CLAUDE_API_KEY")
     if not api_key:
-        print("⚠️ GEMINI_API_KEY not found, using fallback description")
+        print("⚠️ CLAUDE_API_KEY not found, using fallback description")
         return (
             generate_smart_fallback_description(languages, services, file_details, project_name),
             {}
         )
 
     try:
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-flash-latest")
+        client = anthropic.Anthropic(api_key=api_key)
 
         # Summarize file snippets for AI context
         summarized_files = []
@@ -87,7 +86,13 @@ Here is a sample of project files and their content:
 Explain what the entire project does in 2-3 sentences, and how the files connect
 (frontend ↔ backend ↔ database ↔ configs). Write like a human GitHub README introduction.
 """
-        project_desc = model.generate_content(project_prompt).text.strip()
+        
+        response = client.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=500,
+            messages=[{"role": "user", "content": project_prompt}]
+        )
+        project_desc = response.content[0].text.strip()
 
         # Step 2: Per-file explanations
         file_summaries = {}
@@ -100,15 +105,19 @@ File: {name}
 {snippet}
 """
             try:
-                resp = model.generate_content(prompt)
-                file_summaries[name] = resp.text.strip()
+                resp = client.messages.create(
+                    model="claude-3-haiku-20240307",
+                    max_tokens=200,
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                file_summaries[name] = resp.content[0].text.strip()
             except Exception:
                 file_summaries[name] = "Could not summarize this file."
 
         return project_desc, file_summaries
 
     except Exception as e:
-        print(f"Gemini AI error: {e}")
+        print(f"Claude AI error: {e}")
         return (
             generate_smart_fallback_description(languages, services, file_details, project_name),
             {}

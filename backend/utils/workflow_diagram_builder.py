@@ -115,7 +115,9 @@ def build_workflow_diagram(languages, services, project_name="Project"):
         "title": "User/Client",
         "description": "End user or client application",
         "type": "user",
-        "logo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23333' d='M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 7V9C15 10.1 14.1 11 13 11V16L15 18V22H13V19L11 17V22H9V18L11 16V11C9.9 11 9 10.1 9 9V7H3V9H5V16C5 17.1 5.9 18 7 18H9V20H11V18H13C14.1 18 15 17.1 15 16V9H21Z'/%3E%3C/svg%3E"
+        "logo": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23333' d='M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 7V9C15 10.1 14.1 11 13 11V16L15 18V22H13V19L11 17V22H9V18L11 16V11C9.9 11 9 10.1 9 9V7H3V9H5V16C5 17.1 5.9 18 7 18H9V20H11V18H13C14.1 18 15 17.1 15 16V9H21Z'/%3E%3C/svg%3E",
+        "inputs": [],
+        "outputs": [{"id": "user_output", "label": "Output"}]
     })
     
     # All languages as application components
@@ -125,7 +127,9 @@ def build_workflow_diagram(languages, services, project_name="Project"):
             "title": f"{lang} Application",
             "description": f"Built with {count} {lang} files",
             "type": "application",
-            "logo": get_language_logo(lang)
+            "logo": get_language_logo(lang),
+            "inputs": [{"id": f"lang_{lang}_input", "label": "Input"}],
+            "outputs": [{"id": f"lang_{lang}_output", "label": "Output"}]
         })
     
     # All services as service components
@@ -133,12 +137,15 @@ def build_workflow_diagram(languages, services, project_name="Project"):
         # Truncate extremely long service names
         display_title = service if len(service) <= 25 else service[:22] + "..."
         service_type = "database" if any(x in service.lower() for x in ["postgres", "mysql", "mongodb", "redis"]) else "cloud" if "aws" in service.lower() else "service"
+        service_id = f"service_{service.replace(' ', '_').replace('.', '_')[:20]}"
         components.append({
-            "id": f"service_{service.replace(' ', '_').replace('.', '_')[:20]}",
+            "id": service_id,
             "title": display_title,
             "description": f"Referenced {count} times in code",
             "type": service_type,
-            "logo": get_service_logo(service)
+            "logo": get_service_logo(service),
+            "inputs": [{"id": f"{service_id}_input", "label": "Input"}],
+            "outputs": [{"id": f"{service_id}_output", "label": "Output"}]
         })
     
     # Generate detailed flow explanations

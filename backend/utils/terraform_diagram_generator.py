@@ -47,7 +47,9 @@ def _create_tech_architecture_diagram(detected_services, project_name):
                 'name': service_config['name'],
                 'icon': service_config['icon'],
                 'color': service_config['color'],
-                'category': service_type
+                'category': service_type,
+                'inputs': [{'id': f"{service_config['id']}_input", 'label': 'Input'}],
+                'outputs': [{'id': f"{service_config['id']}_output", 'label': 'Output'}]
             })
             
             # Add workflow step
@@ -65,7 +67,9 @@ def _create_tech_architecture_diagram(detected_services, project_name):
             'name': 'Infrastructure',
             'icon': '📋',
             'color': '#FF6B9D',
-            'category': 'management'
+            'category': 'management',
+            'inputs': [{'id': 'cloudformation_input', 'label': 'Input'}],
+            'outputs': [{'id': 'cloudformation_output', 'label': 'Output'}]
         })
     
     return {

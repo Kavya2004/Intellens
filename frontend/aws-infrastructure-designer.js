@@ -105,27 +105,32 @@ class AWSInfrastructureDesigner {
         
         return `
             <div class="designer-sidebar">
-                <input type="text" class="search-input" placeholder="Search services..." />
-                
-                <div class="category-header">Project Services</div>
-                
-                ${Object.entries(servicesByCategory).map(([categoryName, services]) => `
-                    <div class="service-category">
-                        <div class="category-item category-title" data-category="${categoryName}">
-                            <span class="category-icon">📁</span>
-                            ${categoryName} (${services.length})
-                            <span class="expand-icon">▼</span>
+                <div class="sidebar-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
+                    <span class="toggle-icon">◀</span>
+                </div>
+                <div class="sidebar-content">
+                    <input type="text" class="search-input" placeholder="Search services..." />
+                    
+                    <div class="category-header">Project Services</div>
+                    
+                    ${Object.entries(servicesByCategory).map(([categoryName, services]) => `
+                        <div class="service-category">
+                            <div class="category-item category-title" data-category="${categoryName}">
+                                <span class="category-icon">📁</span>
+                                ${categoryName} (${services.length})
+                                <span class="expand-icon">▼</span>
+                            </div>
+                            <div class="category-services" data-category="${categoryName}" style="display: block;">
+                                ${services.map(service => `
+                                    <div class="category-service" data-service="${service.name}" data-service-id="${service.id}">
+                                        <span class="service-icon">${service.icon}</span>
+                                        <span class="service-name">${service.name}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
-                        <div class="category-services" data-category="${categoryName}" style="display: block;">
-                            ${services.map(service => `
-                                <div class="category-service" data-service="${service.name}" data-service-id="${service.id}">
-                                    <span class="service-icon">${service.icon}</span>
-                                    <span class="service-name">${service.name}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `).join('')}
+                    `).join('')}
+                </div>
             </div>
         `;
     }
@@ -199,14 +204,24 @@ class AWSInfrastructureDesigner {
     }
 
     renderService(service) {
+        const inputs = service.inputs || [];
+        const outputs = service.outputs || [];
+        
         return `
             <div class="aws-service" data-service-id="${service.id}" data-service-type="${service.name}">
-                <div class="service-icon">${service.icon}</div>
-                <div class="service-details">
-                    <div class="service-name">${service.name}</div>
-                    <div class="service-resource">${service.resource_name}</div>
+                <div class="service-inputs">
+                    ${inputs.map(input => `<div class="input-node" data-input-id="${input.id}">●</div>`).join('')}
                 </div>
-                <div class="service-status">●</div>
+                <div class="service-content">
+                    <div class="service-icon">${service.icon}</div>
+                    <div class="service-details">
+                        <div class="service-name">${service.name}</div>
+                        <div class="service-resource">${service.resource_name}</div>
+                    </div>
+                </div>
+                <div class="service-outputs">
+                    ${outputs.map(output => `<div class="output-node" data-output-id="${output.id}">●</div>`).join('')}
+                </div>
             </div>
         `;
     }
@@ -365,6 +380,10 @@ class AWSInfrastructureDesigner {
                 this.filterServices(e.target.value);
             });
         }
+
+        // Click connections
+        this.attachDragDropListeners();
+        this.attachScrollListener();
     }
 
     selectService(service) {
@@ -405,6 +424,126 @@ class AWSInfrastructureDesigner {
             }
         });
     }
+
+    attachScrollListener() {
+        const container = this.container.querySelector('.canvas-content-flex');
+        
+        const updateConnections = () => {
+            // Find all connection elements created by createConnectionFromMouse
+            const connections = container.querySelectorAll('div[style*="position: absolute"][style*="background: #007bff"]');
+            
+            connections.forEach(connection => {
+                // Skip if this connection has stored node references
+                if (!connection.fromNode || !connection.toNode) return;
+                
+                const containerRect = container.getBoundingClientRect();
+                const fromRect = connection.fromNode.getBoundingClientRect();
+                const toRect = connection.toNode.getBoundingClientRect();
+                
+                const startX = fromRect.left - containerRect.left + container.scrollLeft + fromRect.width / 2;
+                const startY = fromRect.top - containerRect.top + container.scrollTop + fromRect.height / 2;
+                const endX = toRect.left - containerRect.left + container.scrollLeft + toRect.width / 2;
+                const endY = toRect.top - containerRect.top + container.scrollTop + toRect.height / 2;
+                
+                const length = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
+                const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+                
+                connection.style.left = `${startX}px`;
+                connection.style.top = `${startY}px`;
+                connection.style.width = `${length}px`;
+                connection.style.transform = `rotate(${angle}deg)`;
+            });
+        };
+        
+        container.addEventListener('scroll', updateConnections);
+        window.addEventListener('resize', updateConnections);
+    }
+
+    attachDragDropListeners() {
+        let selectedOutputNode = null;
+        let startMousePos = null;
+        
+        // Click red output node
+        this.container.querySelectorAll('.output-node').forEach(node => {
+            node.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (selectedOutputNode) selectedOutputNode.style.backgroundColor = '#dc3545';
+                selectedOutputNode = node;
+                startMousePos = { x: e.clientX, y: e.clientY };
+                node.style.backgroundColor = '#ffc107';
+            });
+        });
+        
+        // Click green input node
+        this.container.querySelectorAll('.input-node').forEach(node => {
+            node.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (selectedOutputNode && startMousePos) {
+                    const endMousePos = { x: e.clientX, y: e.clientY };
+                    this.createConnectionFromMouse(startMousePos, endMousePos);
+                    selectedOutputNode.style.backgroundColor = '#dc3545';
+                    selectedOutputNode = null;
+                    startMousePos = null;
+                }
+            });
+        });
+    }
+    
+    createConnectionFromMouse(startPos, endPos) {
+        const content = this.container.querySelector('.canvas-content-flex');
+        const contentRect = content.getBoundingClientRect();
+        
+        // Find the nodes that were clicked
+        const fromNode = document.elementFromPoint(startPos.x, startPos.y).closest('.aws-service');
+        const toNode = document.elementFromPoint(endPos.x, endPos.y).closest('.aws-service');
+        
+        const startX = startPos.x - contentRect.left + content.scrollLeft;
+        const startY = startPos.y - contentRect.top + content.scrollTop;
+        const endX = endPos.x - contentRect.left + content.scrollLeft;
+        const endY = endPos.y - contentRect.top + content.scrollTop;
+        
+        const connection = document.createElement('div');
+        const length = Math.sqrt((endX-startX)**2 + (endY-startY)**2);
+        const angle = Math.atan2(endY-startY, endX-startX) * 180/Math.PI;
+        
+        // Store node references for scroll updates
+        connection.fromNode = fromNode;
+        connection.toNode = toNode;
+        
+        connection.style.cssText = `
+            position: absolute;
+            left: ${startX}px;
+            top: ${startY}px;
+            width: ${length}px;
+            height: 2px;
+            background: #007bff;
+            transform-origin: left center;
+            transform: rotate(${angle}deg);
+            pointer-events: auto;
+            z-index: 5;
+            cursor: pointer;
+        `;
+        
+        connection.addEventListener('click', () => {
+            connection.remove();
+        });
+        
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid #007bff;
+            border-top: 3px solid transparent;
+            border-bottom: 3px solid transparent;
+        `;
+
+        connection.appendChild(arrow);
+        content.appendChild(connection);
+    }
 }
 
 // Render function for integration
@@ -427,11 +566,47 @@ function renderAWSInfrastructureDiagram(container, diagramData) {
                 width: 250px;
                 background: #f8f9fa;
                 border-right: 1px solid #ddd;
-                padding: 15px;
                 overflow-y: scroll;
                 height: 600px;
                 flex-shrink: 0;
                 box-sizing: border-box;
+                position: relative;
+                transition: width 0.3s ease;
+            }
+            
+            .designer-sidebar.collapsed {
+                width: 40px;
+            }
+            
+            .sidebar-toggle {
+                position: absolute;
+                top: 10px;
+                right: 5px;
+                width: 30px;
+                height: 30px;
+                background: #007bff;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 100;
+                font-size: 12px;
+            }
+            
+            .sidebar-content {
+                padding: 15px;
+                transition: opacity 0.3s ease;
+            }
+            
+            .designer-sidebar.collapsed .sidebar-content {
+                opacity: 0;
+                pointer-events: none;
+            }
+            
+            .designer-sidebar.collapsed .toggle-icon {
+                transform: rotate(180deg);
             }
             
             .search-input {
@@ -514,6 +689,10 @@ function renderAWSInfrastructureDiagram(container, diagramData) {
                 overflow: auto;
             }
             
+            .canvas-content-flex {
+                position: relative;
+            }
+            
             .canvas-header {
                 padding: 15px 20px;
                 background: white;
@@ -542,6 +721,7 @@ function renderAWSInfrastructureDiagram(container, diagramData) {
                 padding: 20px;
                 align-items: flex-start;
                 overflow-x: auto;
+                position: relative;
             }
             
             .service-group-flex {
@@ -579,14 +759,58 @@ function renderAWSInfrastructureDiagram(container, diagramData) {
                 border: 1px solid #ccc;
                 border-radius: 6px;
                 background: white;
-                padding: 12px;
+                padding: 8px;
                 margin: 8px 0;
                 display: flex;
                 align-items: center;
-                gap: 10px;
                 cursor: pointer;
                 transition: all 0.2s ease;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                position: relative;
+            }
+            
+            .service-content {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex: 1;
+                padding: 4px 8px;
+            }
+            
+            .service-inputs, .service-outputs {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                padding: 4px;
+            }
+            
+            .input-node, .output-node {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 8px;
+            }
+            
+            .input-node {
+                background: #28a745;
+                color: white;
+                border: 2px solid #1e7e34;
+            }
+            
+            .output-node {
+                background: #dc3545;
+                color: white;
+                border: 2px solid #c82333;
+            }
+            
+            .input-node:hover, .output-node:hover {
+                transform: scale(1.2);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             }
             
             .aws-service:hover {

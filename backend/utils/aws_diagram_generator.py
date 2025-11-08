@@ -468,7 +468,9 @@ class AWSInfrastructureDiagramGenerator:
             'description': lang_info['description'],
             'use_cases': lang_info['use_cases'],
             'characteristics': lang_info.get('characteristics', []),
-            'terraform_config': lang_info.get('terraform_config', f'# {language} application')
+            'terraform_config': lang_info.get('terraform_config', f'# {language} application'),
+            'inputs': [{'id': f'lang_{language.lower()}_input', 'label': 'Input'}],
+            'outputs': [{'id': f'lang_{language.lower()}_output', 'label': 'Output'}]
         }
     
     def _create_generic_service(self, service_name: str, count: int) -> Dict[str, Any]:
@@ -490,7 +492,9 @@ class AWSInfrastructureDiagramGenerator:
             'description': service_info['description'],
             'use_cases': service_info['use_cases'],
             'integration_benefits': service_info.get('integration_benefits', []),
-            'terraform_config': service_info.get('terraform_config', f'# {service_name} configuration')
+            'terraform_config': service_info.get('terraform_config', f'# {service_name} configuration'),
+            'inputs': [{'id': f'service_{service_name.lower().replace(" ", "_")}_input', 'label': 'Input'}],
+            'outputs': [{'id': f'service_{service_name.lower().replace(" ", "_")}_output', 'label': 'Output'}]
         }
     
     def _create_service(self, service_type: str, resource_name: str, config: Dict) -> Dict[str, Any]:
@@ -520,7 +524,9 @@ class AWSInfrastructureDiagramGenerator:
             'category': service_info['category'],
             'resource_name': resource_name,
             'config': config,
-            'description': self._get_service_description_from_config(service_info['name'], config)
+            'description': self._get_service_description_from_config(service_info['name'], config),
+            'inputs': [{'id': f"{service_info['aws_type']}.{resource_name}_input", 'label': 'Input'}],
+            'outputs': [{'id': f"{service_info['aws_type']}.{resource_name}_output", 'label': 'Output'}]
         }
     
     def _get_service_description_from_config(self, service_name: str, config: Dict) -> str:

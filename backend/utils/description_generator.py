@@ -1,22 +1,21 @@
 import os
-import google.generativeai as genai
+import anthropic
 from typing import Dict, List
 
 class DescriptionGenerator:
-    """Generate descriptions for programming languages and services using Gemini."""
+    """Generate descriptions for programming languages and services using Claude."""
     
     def __init__(self):
-        # Configure Gemini API
-        api_key = os.getenv('GEMINI_API_KEY')
+        # Configure Claude API
+        api_key = os.getenv('CLAUDE_API_KEY')
         if api_key:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-flash-latest')
+            self.client = anthropic.Anthropic(api_key=api_key)
         else:
-            self.model = None
+            self.client = None
     
     def get_language_description(self, language: str, file_count: int) -> Dict[str, any]:
         """Get comprehensive description for a programming language."""
-        if not self.model:
+        if not self.client:
             return self._get_fallback_language_description(language, file_count)
         
         try:
@@ -36,12 +35,16 @@ class DescriptionGenerator:
             Keep descriptions concise and practical. Focus on real-world applications.
             """
             
-            response = self.model.generate_content(prompt)
+            response = self.client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=1000,
+                messages=[{"role": "user", "content": prompt}]
+            )
             
             # Parse JSON response
             import json
             try:
-                result = json.loads(response.text.strip())
+                result = json.loads(response.content[0].text.strip())
                 return {
                     'description': result['description'],
                     'use_cases': result['use_cases'],
@@ -54,12 +57,12 @@ class DescriptionGenerator:
                 return self._get_fallback_language_description(language, file_count)
             
         except Exception as e:
-            print(f"Gemini API error for {language}: {e}")
+            print(f"Claude API error for {language}: {e}")
             return self._get_fallback_language_description(language, file_count)
     
     def get_service_description(self, service: str, reference_count: int) -> Dict[str, any]:
         """Get comprehensive description for a service or technology."""
-        if not self.model:
+        if not self.client:
             return self._get_fallback_service_description(service, reference_count)
         
         try:
@@ -79,12 +82,16 @@ class DescriptionGenerator:
             Keep descriptions concise and practical. Focus on real-world applications and integration benefits.
             """
             
-            response = self.model.generate_content(prompt)
+            response = self.client.messages.create(
+                model="claude-3-haiku-20240307",
+                max_tokens=1000,
+                messages=[{"role": "user", "content": prompt}]
+            )
             
             # Parse JSON response
             import json
             try:
-                result = json.loads(response.text.strip())
+                result = json.loads(response.content[0].text.strip())
                 return {
                     'description': result['description'],
                     'use_cases': result['use_cases'],
@@ -97,7 +104,7 @@ class DescriptionGenerator:
                 return self._get_fallback_service_description(service, reference_count)
             
         except Exception as e:
-            print(f"Gemini API error for {service}: {e}")
+            print(f"Claude API error for {service}: {e}")
             return self._get_fallback_service_description(service, reference_count)
     
     def _get_fallback_language_description(self, language: str, file_count: int) -> Dict[str, any]:

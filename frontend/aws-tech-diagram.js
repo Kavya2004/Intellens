@@ -128,16 +128,15 @@ function createServiceElement(service, stepNumber) {
         background: white;
         border: 2px solid ${service.color || '#ccc'};
         border-radius: 8px;
-        padding: 15px;
+        padding: 10px;
         text-align: center;
         position: relative;
         min-height: 120px;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
         cursor: pointer;
         transition: transform 0.2s ease;
     `;
+    element.setAttribute('data-service-id', service.id);
 
     element.addEventListener('mouseenter', () => {
         element.style.transform = 'scale(1.05)';
@@ -146,6 +145,41 @@ function createServiceElement(service, stepNumber) {
     element.addEventListener('mouseleave', () => {
         element.style.transform = 'scale(1)';
     });
+
+    // Input nodes
+    const inputs = service.inputs || [];
+    const inputsContainer = document.createElement('div');
+    inputsContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 4px;
+        align-items: center;
+        justify-content: center;
+    `;
+    inputs.forEach(input => {
+        const inputNode = document.createElement('div');
+        inputNode.style.cssText = `
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            border: 2px solid #1e7e34;
+            cursor: pointer;
+        `;
+        inputNode.setAttribute('data-input-id', input.id);
+        inputsContainer.appendChild(inputNode);
+    });
+
+    // Service content
+    const serviceContent = document.createElement('div');
+    serviceContent.style.cssText = `
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 0 10px;
+    `;
 
     // Step number
     const stepBadge = document.createElement('div');
@@ -194,10 +228,39 @@ function createServiceElement(service, stepNumber) {
     `;
     category.textContent = service.category.replace('_', ' ');
 
-    element.appendChild(stepBadge);
-    element.appendChild(icon);
-    element.appendChild(name);
-    element.appendChild(category);
+    serviceContent.appendChild(stepBadge);
+    serviceContent.appendChild(icon);
+    serviceContent.appendChild(name);
+    serviceContent.appendChild(category);
+
+    // Output nodes
+    const outputs = service.outputs || [];
+    const outputsContainer = document.createElement('div');
+    outputsContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 4px;
+        align-items: center;
+        justify-content: center;
+    `;
+    outputs.forEach(output => {
+        const outputNode = document.createElement('div');
+        outputNode.style.cssText = `
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dc3545;
+            border: 2px solid #c82333;
+            cursor: pointer;
+        `;
+        outputNode.setAttribute('data-output-id', output.id);
+        outputsContainer.appendChild(outputNode);
+    });
+
+    element.appendChild(inputsContainer);
+    element.appendChild(serviceContent);
+    element.appendChild(outputsContainer);
 
     return element;
 }
