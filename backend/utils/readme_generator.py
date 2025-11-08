@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 import os
-import anthropic
+from openai import OpenAI
 import zipfile
 
 # Load .env variables
@@ -31,7 +31,7 @@ def generate_readme(languages, services, file_details, project_name):
     if languages:
         readme += "## Tech Stack\n\n"
         for lang in languages.keys():
-            readme += f"- {lang}\n"
+            readme += f"- **{lang}**\n"
         readme += "\n"
 
     # Quick Start
@@ -52,18 +52,21 @@ def generate_readme(languages, services, file_details, project_name):
 
 
 def generate_ai_project_and_file_summary(languages, services, file_details, project_name):
-    """Use Claude AI to generate project description and per-file explanations."""
+    """Use OpenRouter AI to generate project description and per-file explanations."""
     
-    api_key = os.getenv("CLAUDE_API_KEY")
+    api_key = os.getenv("OPENROUTER_API_KEY")
     if not api_key:
-        print("⚠️ CLAUDE_API_KEY not found, using fallback description")
+        print("⚠️ OPENROUTER_API_KEY not found, using fallback description")
         return (
             generate_smart_fallback_description(languages, services, file_details, project_name),
             {}
         )
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+        )
 
         # Summarize file snippets for AI context
         summarized_files = []
@@ -87,16 +90,16 @@ Explain what the entire project does in 2-3 sentences, and how the files connect
 (frontend ↔ backend ↔ database ↔ configs). Write like a human GitHub README introduction.
 """
         
-        response = client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=500,
-            messages=[{"role": "user", "content": project_prompt}]
+        response = client.chat.completions.create(
+            model="meta-llama/llama-3.2-3b-instruct",
+            messages=[{"role": "user", "content": project_prompt}],
+            max_tokens=500
         )
-        project_desc = response.content[0].text.strip()
+        project_desc = response.choices[0].message.content.strip()
 
-        # Step 2: Per-file explanations
+        # Step 2: Per-file explanations (limited to reduce API calls)
         file_summaries = {}
-        for f in file_details[:12]:
+        for f in file_details[:5]:
             name = f["file"]
             snippet = f.get("snippet") or f.get("content", "")[:500]
             prompt = f"""
@@ -105,19 +108,19 @@ File: {name}
 {snippet}
 """
             try:
-                resp = client.messages.create(
-                    model="claude-3-haiku-20240307",
-                    max_tokens=200,
-                    messages=[{"role": "user", "content": prompt}]
+                resp = client.chat.completions.create(
+                    model="meta-llama/llama-3.2-3b-instruct",
+                    messages=[{"role": "user", "content": prompt}],
+                    max_tokens=200
                 )
-                file_summaries[name] = resp.content[0].text.strip()
+                file_summaries[name] = resp.choices[0].message.content.strip()
             except Exception:
                 file_summaries[name] = "Could not summarize this file."
 
         return project_desc, file_summaries
 
     except Exception as e:
-        print(f"Claude AI error: {e}")
+        print(f"OpenRouter AI error: {e}")
         return (
             generate_smart_fallback_description(languages, services, file_details, project_name),
             {}
@@ -151,36 +154,36 @@ def generate_smart_fallback_description(languages, services, file_details, proje
 def generate_features_section(languages, services, file_details):
     features = []
     if 'FastAPI' in services or 'Flask' in services:
-        features.append("- REST API: HTTP endpoints for data access and manipulation")
+        features.append("- **REST API**: HTTP endpoints for data access and manipulation")
     if 'Docker' in services:
-        features.append("- Containerization: Docker support for deployment")
+        features.append("- **Containerization**: Docker support for deployment")
     if any('database' in s.lower() for s in services.keys()):
-        features.append("- Data Storage: Database integration")
+        features.append("- **Data Storage**: Database integration")
     if 'JavaScript' in languages:
-        features.append("- Interactive UI: Dynamic frontend")
+        features.append("- **Interactive UI**: Dynamic frontend")
     if 'Terraform' in languages:
-        features.append("- Infrastructure as Code: Automated provisioning")
+        features.append("- **Infrastructure as Code**: Automated provisioning")
     if any('test' in f['file'].lower() for f in file_details) if file_details else False:
-        features.append("- Testing: Automated test suite")
+        features.append("- **Testing**: Automated test suite")
     return "\n".join(features) if features else None
 
 
 def generate_quick_start(languages, services):
     steps = []
     if 'Python' in languages:
-        steps.append("1. Install dependencies:\n   ```bash\n   pip install -r requirements.txt\n   ```")
+        steps.append("1. **Install dependencies**:\n   ```bash\n   pip install -r requirements.txt\n   ```")
         if 'FastAPI' in services:
-            steps.append("2. Start server:\n   ```bash\n   uvicorn main:app --reload\n   ```")
+            steps.append("2. **Start server**:\n   ```bash\n   uvicorn main:app --reload\n   ```")
         else:
-            steps.append("2. Run application:\n   ```bash\n   python main.py\n   ```")
+            steps.append("2. **Run application**:\n   ```bash\n   python main.py\n   ```")
     elif 'JavaScript' in languages:
-        steps.append("1. Install packages:\n   ```bash\n   npm install\n   ```")
-        steps.append("2. Start development:\n   ```bash\n   npm start\n   ```")
+        steps.append("1. **Install packages**:\n   ```bash\n   npm install\n   ```")
+        steps.append("2. **Start development**:\n   ```bash\n   npm start\n   ```")
     elif 'Terraform' in languages:
-        steps.append("1. Initialize:\n   ```bash\n   terraform init\n   ```")
-        steps.append("2. Plan:\n   ```bash\n   terraform plan\n   ```")
-        steps.append("3. Apply:\n   ```bash\n   terraform apply\n   ```")
+        steps.append("1. **Initialize**:\n   ```bash\n   terraform init\n   ```")
+        steps.append("2. **Plan**:\n   ```bash\n   terraform plan\n   ```")
+        steps.append("3. **Apply**:\n   ```bash\n   terraform apply\n   ```")
     if 'Docker' in services:
         steps.append("\n### Docker Alternative\n")
         steps.append("```bash\ndocker build -t app .\ndocker run -p 8000:8000 app\n```")
-    return "\n".join(steps) if steps else None
+    return "\n\n".join(steps) if steps else None

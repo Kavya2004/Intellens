@@ -60,7 +60,7 @@ def generate_architecture_diagram(languages, services, connections, file_structu
         if not GEMINI_API_KEY:
             return create_fallback_diagram(languages, services)
             
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
         response = model.generate_content(context)
         
         # Parse JSON response

@@ -144,7 +144,7 @@
             <div class="diagram">
                 <button onclick="copyReadme()" style="margin-bottom: 10px; margin-right: 10px;">Copy to Clipboard</button>
                 <button onclick="downloadReadme()" style="margin-bottom: 10px;">Download README.md</button>
-                <pre id="readme-content" style="background: #f8f9fa; padding: 15px; border-radius: 5px; white-space: pre-wrap; font-family: monospace; font-size: 13px;"></pre>
+                <div id="readme-content" style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;"></div>
             </div>
         </div>
     </div>
@@ -250,7 +250,24 @@
             
             // Display README content
             const readmeDiv = document.getElementById('readme-content');
-            readmeDiv.textContent = data.readme_content || 'No README content generated';
+            const readmeContent = data.readme_content || 'No README content generated';
+            
+            // Convert basic Markdown to HTML for better display
+            const htmlContent = readmeContent
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
+                .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>') // H1 headers
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>') // H2 headers
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>') // H3 headers
+                .replace(/^- (.*$)/gm, '<li>$1</li>') // List items
+                .replace(/`([^`]+)`/g, '<code>$1</code>') // Inline code
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>') // Code blocks
+                .replace(/\n/g, '<br>'); // Line breaks
+            
+            // Wrap list items in ul tags
+            const finalContent = htmlContent.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            
+            readmeDiv.innerHTML = finalContent;
             
             // Store readme filename for download
             window.currentReadmeFilename = data.readme_filename;
