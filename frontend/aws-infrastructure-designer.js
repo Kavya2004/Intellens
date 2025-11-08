@@ -332,15 +332,78 @@ class AWSInfrastructureDesigner {
     }
 
     attachEventListeners() {
-        // Service selection from canvas
+        // Service selection and drag from canvas
         this.container.querySelectorAll('.aws-service').forEach(serviceEl => {
-            serviceEl.addEventListener('click', (e) => {
-                const serviceId = e.currentTarget.dataset.serviceId;
-                const service = this.data.canvas.services.find(s => s.id === serviceId);
-                if (service) {
-                    this.selectService(service);
+            let isDragging = false;
+            let dragLine = null;
+            let startService = null;
+            const canvas = this.container.querySelector('.canvas-content-flex');
+            
+            serviceEl.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                isDragging = true;
+                startService = serviceEl;
+                serviceEl.style.borderColor = '#ffc107';
+                
+                const canvasRect = canvas.getBoundingClientRect();
+                const serviceRect = serviceEl.getBoundingClientRect();
+                const startX = serviceRect.left - canvasRect.left + canvas.scrollLeft + serviceRect.width / 2;
+                const startY = serviceRect.top - canvasRect.top + canvas.scrollTop + serviceRect.height / 2;
+                
+                dragLine = document.createElement('div');
+                dragLine.style.cssText = `position: absolute; left: ${startX}px; top: ${startY}px; width: 0px; height: 2px; background: #ffc107; transform-origin: left center; pointer-events: none; z-index: 1000;`;
+                canvas.appendChild(dragLine);
+                
+                canvas.addEventListener('mousemove', handleMouseMove);
+            });
+            
+            const handleMouseMove = (e) => {
+                if (!isDragging || !dragLine) return;
+                
+                const canvasRect = canvas.getBoundingClientRect();
+                const serviceRect = startService.getBoundingClientRect();
+                const startX = serviceRect.left - canvasRect.left + canvas.scrollLeft + serviceRect.width / 2;
+                const startY = serviceRect.top - canvasRect.top + canvas.scrollTop + serviceRect.height / 2;
+                const endX = e.clientX - canvasRect.left + canvas.scrollLeft;
+                const endY = e.clientY - canvasRect.top + canvas.scrollTop;
+                
+                const length = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
+                const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+                
+                dragLine.style.width = `${length}px`;
+                dragLine.style.transform = `rotate(${angle}deg)`;
+            };
+            
+            canvas.addEventListener('mousemove', handleMouseMove);
+            
+            const handleMouseUp = (e) => {
+                if (isDragging) {
+                    const targetService = document.elementFromPoint(e.clientX, e.clientY)?.closest('.aws-service');
+                    if (targetService && targetService !== startService) {
+                        this.createServiceConnection(startService, targetService);
+                    }
+                    
+                    startService.style.borderColor = '#ccc';
+                    if (dragLine) dragLine.remove();
+                    canvas.removeEventListener('mousemove', handleMouseMove);
+                    canvas.removeEventListener('mouseup', handleMouseUp);
+                    isDragging = false;
+                    dragLine = null;
+                    startService = null;
+                }
+            };
+            
+            serviceEl.addEventListener('mouseup', (e) => {
+                if (!isDragging) {
+                    const serviceId = e.currentTarget.dataset.serviceId;
+                    const service = this.data.canvas.services.find(s => s.id === serviceId);
+                    if (service) {
+                        this.selectService(service);
+                    }
                 }
             });
+            
+            canvas.addEventListener('mouseup', handleMouseUp);
         });
         
         // Service selection from sidebar
@@ -381,8 +444,6 @@ class AWSInfrastructureDesigner {
             });
         }
 
-        // Click connections
-        this.attachDragDropListeners();
         this.attachScrollListener();
     }
 
@@ -425,6 +486,36 @@ class AWSInfrastructureDesigner {
         });
     }
 
+    createServiceConnection(fromService, toService) {
+        const canvas = this.container.querySelector('.canvas-content-flex');
+        const canvasRect = canvas.getBoundingClientRect();
+        
+        const fromRect = fromService.getBoundingClientRect();
+        const toRect = toService.getBoundingClientRect();
+        
+        const startX = fromRect.left - canvasRect.left + canvas.scrollLeft + fromRect.width / 2;
+        const startY = fromRect.top - canvasRect.top + canvas.scrollTop + fromRect.height / 2;
+        const endX = toRect.left - canvasRect.left + canvas.scrollLeft + toRect.width / 2;
+        const endY = toRect.top - canvasRect.top + canvas.scrollTop + toRect.height / 2;
+        
+        const connection = document.createElement('div');
+        const length = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
+        const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+        
+        connection.fromNode = fromService;
+        connection.toNode = toService;
+        
+        connection.style.cssText = `position: absolute; left: ${startX}px; top: ${startY}px; width: ${length}px; height: 2px; background: #007bff; transform-origin: left center; transform: rotate(${angle}deg); pointer-events: auto; z-index: 5; cursor: pointer;`;
+        
+        connection.addEventListener('click', () => connection.remove());
+        
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `position: absolute; left: 100%; top: 50%; transform: translateY(-50%); width: 0; height: 0; border-left: 6px solid #007bff; border-top: 3px solid transparent; border-bottom: 3px solid transparent;`;
+        
+        connection.appendChild(arrow);
+        canvas.appendChild(connection);
+    }
+
     attachScrollListener() {
         const container = this.container.querySelector('.canvas-content-flex');
         
@@ -460,55 +551,122 @@ class AWSInfrastructureDesigner {
     }
 
     attachDragDropListeners() {
-        let selectedOutputNode = null;
-        let startMousePos = null;
+        let isDragging = false;
+        let dragLine = null;
+        let startService = null;
+        const canvas = this.container.querySelector('.canvas-content-flex');
         
-        // Click red output node
-        this.container.querySelectorAll('.output-node').forEach(node => {
-            node.addEventListener('click', (e) => {
+        // Mouse down on service block - start drag
+        this.container.querySelectorAll('.aws-service').forEach(service => {
+            service.addEventListener('mousedown', (e) => {
+                // Don't interfere with service selection clicks
+                if (e.target.closest('.service-content')) return;
+                
+                e.preventDefault();
                 e.stopPropagation();
-                if (selectedOutputNode) selectedOutputNode.style.backgroundColor = '#dc3545';
-                selectedOutputNode = node;
-                startMousePos = { x: e.clientX, y: e.clientY };
-                node.style.backgroundColor = '#ffc107';
+                
+                isDragging = true;
+                startService = service;
+                service.style.borderColor = '#ffc107';
+                service.style.borderWidth = '2px';
+                
+                const canvasRect = canvas.getBoundingClientRect();
+                const serviceRect = service.getBoundingClientRect();
+                
+                const startX = serviceRect.right - canvasRect.left + canvas.scrollLeft;
+                const startY = serviceRect.top - canvasRect.top + canvas.scrollTop + serviceRect.height / 2;
+                
+                // Create temporary drag line
+                dragLine = document.createElement('div');
+                dragLine.style.cssText = `
+                    position: absolute;
+                    left: ${startX}px;
+                    top: ${startY}px;
+                    width: 0px;
+                    height: 2px;
+                    background: #ffc107;
+                    transform-origin: left center;
+                    pointer-events: none;
+                    z-index: 1000;
+                `;
+                canvas.appendChild(dragLine);
             });
         });
         
-        // Click green input node
-        this.container.querySelectorAll('.input-node').forEach(node => {
-            node.addEventListener('click', (e) => {
+        // Mouse move - update drag line
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging || !dragLine || !startService) return;
+            
+            const canvasRect = canvas.getBoundingClientRect();
+            const serviceRect = startService.getBoundingClientRect();
+            
+            const startX = serviceRect.right - canvasRect.left + canvas.scrollLeft;
+            const startY = serviceRect.top - canvasRect.top + canvas.scrollTop + serviceRect.height / 2;
+            const endX = e.clientX - canvasRect.left + canvas.scrollLeft;
+            const endY = e.clientY - canvasRect.top + canvas.scrollTop;
+            
+            const length = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
+            const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
+            
+            dragLine.style.width = `${length}px`;
+            dragLine.style.transform = `rotate(${angle}deg)`;
+        });
+        
+        // Mouse up on service block - create connection
+        this.container.querySelectorAll('.aws-service').forEach(service => {
+            service.addEventListener('mouseup', (e) => {
+                if (!isDragging || !startService || service === startService) return;
+                
+                e.preventDefault();
                 e.stopPropagation();
-                if (selectedOutputNode && startMousePos) {
-                    const endMousePos = { x: e.clientX, y: e.clientY };
-                    this.createConnectionFromMouse(startMousePos, endMousePos);
-                    selectedOutputNode.style.backgroundColor = '#dc3545';
-                    selectedOutputNode = null;
-                    startMousePos = null;
-                }
+                
+                // Create permanent connection
+                this.createServiceConnection(startService, service);
+                this.endDrag();
             });
         });
+        
+        // Mouse up anywhere else - cancel drag
+        document.addEventListener('mouseup', (e) => {
+            if (isDragging) {
+                this.endDrag();
+            }
+        });
+        
+        // Helper function to end drag
+        this.endDrag = () => {
+            if (startService) {
+                startService.style.borderColor = '#ccc';
+                startService.style.borderWidth = '1px';
+            }
+            if (dragLine) {
+                dragLine.remove();
+            }
+            isDragging = false;
+            dragLine = null;
+            startService = null;
+        };
     }
     
-    createConnectionFromMouse(startPos, endPos) {
-        const content = this.container.querySelector('.canvas-content-flex');
-        const contentRect = content.getBoundingClientRect();
+    createServiceConnection(fromService, toService) {
+        const canvas = this.container.querySelector('.canvas-content-flex');
+        const canvasRect = canvas.getBoundingClientRect();
         
-        // Find the nodes that were clicked
-        const fromNode = document.elementFromPoint(startPos.x, startPos.y).closest('.aws-service');
-        const toNode = document.elementFromPoint(endPos.x, endPos.y).closest('.aws-service');
+        const fromRect = fromService.getBoundingClientRect();
+        const toRect = toService.getBoundingClientRect();
         
-        const startX = startPos.x - contentRect.left + content.scrollLeft;
-        const startY = startPos.y - contentRect.top + content.scrollTop;
-        const endX = endPos.x - contentRect.left + content.scrollLeft;
-        const endY = endPos.y - contentRect.top + content.scrollTop;
+        const startX = fromRect.right - canvasRect.left + canvas.scrollLeft;
+        const startY = fromRect.top - canvasRect.top + canvas.scrollTop + fromRect.height / 2;
+        const endX = toRect.left - canvasRect.left + canvas.scrollLeft;
+        const endY = toRect.top - canvasRect.top + canvas.scrollTop + toRect.height / 2;
         
         const connection = document.createElement('div');
-        const length = Math.sqrt((endX-startX)**2 + (endY-startY)**2);
-        const angle = Math.atan2(endY-startY, endX-startX) * 180/Math.PI;
+        const length = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
+        const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
         
-        // Store node references for scroll updates
-        connection.fromNode = fromNode;
-        connection.toNode = toNode;
+        // Store service references for scroll updates
+        connection.fromNode = fromService;
+        connection.toNode = toService;
         
         connection.style.cssText = `
             position: absolute;
@@ -524,10 +682,12 @@ class AWSInfrastructureDesigner {
             cursor: pointer;
         `;
         
+        // Click to remove connection
         connection.addEventListener('click', () => {
             connection.remove();
         });
         
+        // Add arrow at the end
         const arrow = document.createElement('div');
         arrow.style.cssText = `
             position: absolute;
@@ -540,9 +700,9 @@ class AWSInfrastructureDesigner {
             border-top: 3px solid transparent;
             border-bottom: 3px solid transparent;
         `;
-
+        
         connection.appendChild(arrow);
-        content.appendChild(connection);
+        canvas.appendChild(connection);
     }
 }
 
