@@ -67,7 +67,22 @@ async def upload_project(file: UploadFile = File(...)):
     )
     
     # Generate README
-    readme_content = generate_readme(languages, services, file_details, file.filename.split('.')[0])
+    # readme_content = generate_readme(languages, services, file_details, file.filename.split('.')[0])
+    readme_content = f"""# {file.filename.split('.')[0]}
+
+## Project Overview
+This project contains {len(languages)} programming languages and {len(services)} detected services.
+
+## Languages Detected
+{chr(10).join([f'- {lang}: {count} files' for lang, count in languages.items()])}
+
+## Services & Technologies
+{chr(10).join([f'- {service}' for service in services.keys()])}
+
+## Files
+{chr(10).join([f'- {file["file"]}' for file in file_details[:10]])}
+{"\n- ... and more" if len(file_details) > 10 else ""}
+"""
     
     # Generate frontend preview
     frontend_preview = generate_frontend_preview(languages, services, file_details)

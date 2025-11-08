@@ -2,23 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Intellens - Project Analyzer</title>
-    <script>
-        // Redirect to upload page
-        window.location.href = 'upload.html';
-    </script>
+    <title>Intellens - Analysis Results</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .upload-area { border: 2px dashed #ccc; padding: 40px; text-align: center; margin: 20px 0; }
-        .upload-area:hover { border-color: #007bff; }
-        .results { margin-top: 30px; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .main-container { display: flex; gap: 20px; height: calc(100vh - 100px); }
+        .sidebar { width: 300px; overflow-y: auto; }
+        .canvas { flex: 1; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; padding: 20px; overflow-x: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .back-btn { background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; text-decoration: none; }
+        .back-btn:hover { background: #5a6268; }
+        .section.collapsed .section-content { display: none; }
+        .section h2 { cursor: pointer; user-select: none; margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+        .section h2:hover { color: #007bff; background: #e9ecef; }
+        .section { margin: 5px 0; border: none; padding: 0; }
+        .results { margin-top: 20px; }
         .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .item { background: #f8f9fa; padding: 10px; border-radius: 3px; }
         .item:hover { background: #e9ecef; }
-        .loading { display: none; text-align: center; color: #007bff; }
-        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        button:hover { background: #0056b3; }
         .diagram { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 5px; }
         .workflow-step { display: inline-block; margin: 10px; padding: 15px; border: 2px solid #007bff; border-radius: 10px; background: #f0f8ff; text-align: center; min-width: 120px; }
         .step-number { background: #007bff; color: white; border-radius: 50%; width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 10px; }
@@ -90,65 +91,86 @@
     </style>
 </head>
 <body>
-    <h1>Intellens - Project Analyzer</h1>
-    
-    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" accept=".zip" style="display: none;" onchange="uploadFile()">
-        <p>Click to upload ZIP file or drag and drop</p>
+    <div class="header">
+        <h1>Analysis Results</h1>
+        <a href="upload.html" class="back-btn">← Upload New Project</a>
     </div>
     
-    <div class="loading" id="loading">Analyzing project...</div>
-    
-    <div class="results" id="results" style="display: none;">
-        <div class="section">
-            <h2>Project Summary</h2>
-            <div class="grid">
-                <div>
-                    <h3>Languages</h3>
-                    <div id="languages"></div>
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="section collapsed" id="summary">
+                <h2 onclick="showTurtle(1)" ondblclick="showInCanvas('summary')">Project Summary</h2>
+            </div>
+            <div class="section collapsed" id="architecture">
+                <h2 onclick="showTurtle(2)" ondblclick="showInCanvas('architecture')">System Architecture</h2>
+            </div>
+            <div class="section collapsed" id="aws">
+                <h2 onclick="showTurtle(3)" ondblclick="showInCanvas('aws')">AWS Infrastructure</h2>
+            </div>
+            <div class="section collapsed" id="components">
+                <h2 onclick="showTurtle(4)" ondblclick="showInCanvas('components')">Component Diagram</h2>
+            </div>
+            <div class="section collapsed" id="frontend">
+                <h2 onclick="showTurtle(5)" ondblclick="showInCanvas('frontend')">Frontend Preview</h2>
+            </div>
+            <div class="section collapsed" id="readme">
+                <h2 onclick="showTurtle(6)" ondblclick="showInCanvas('readme')">Generated README</h2>
+            </div>
+        </div>
+        
+        <div class="canvas" id="canvas">
+            <div style="text-align: center; color: #666; margin-top: 50px;">
+                <h3>Select a section to view content</h3>
+                <p>Double-click on any section header on the left to display its content here</p>
+            </div>
+        </div>
+        
+        <!-- Hidden content templates -->
+        <div style="display: none;">
+            <div id="summary-content">
+                <div class="grid">
+                    <div>
+                        <h3>Languages</h3>
+                        <div id="languages"></div>
+                    </div>
+                    <div>
+                        <h3>Services & Technologies</h3>
+                        <div id="services" style="max-height: 300px; overflow-y: auto;"></div>
+                    </div>
                 </div>
-                <div>
-                    <h3>Services & Technologies</h3>
-                    <div id="services" style="max-height: 300px; overflow-y: auto;"></div>
+                <div style="margin-top: 20px;">
+                    <h3>File Details</h3>
+                    <div id="file-details" style="max-height: 400px; overflow-y: auto;"></div>
                 </div>
             </div>
-            <div style="margin-top: 20px;">
-                <h3>File Details</h3>
-                <div id="file-details" style="max-height: 400px; overflow-y: auto;"></div>
+            
+            <div id="architecture-content">
+                <div class="diagram" id="workflow-diagram"></div>
             </div>
-        </div>
-        
-        <div class="section">
-            <h2>System Architecture</h2>
-            <div class="diagram" id="workflow-diagram"></div>
-        </div>
-        
-        <div class="section">
-            <h2>Terraform Infrastructure</h2>
-            <div class="diagram" id="terraform-diagram"></div>
-        </div>
-        
-        <div class="section">
-            <h2>Component Diagram</h2>
-            <div class="diagram" id="diagram">
-                <div id="nodes"></div>
-                <div id="connections"></div>
+            
+            <div id="aws-content">
+                <div class="diagram" id="terraform-diagram" style="min-width: max-content;"></div>
             </div>
-        </div>
-        
-        <div class="section">
-            <h2>Frontend Preview</h2>
-            <div class="diagram" id="frontend-preview" style="background: #f8f9fa; min-height: 200px; display: flex; align-items: center; justify-content: center; color: #666;">
-                No frontend preview available
+            
+            <div id="components-content">
+                <div class="diagram" id="diagram">
+                    <div id="nodes"></div>
+                    <div id="connections"></div>
+                </div>
             </div>
-        </div>
-        
-        <div class="section">
-            <h2>Generated README</h2>
-            <div class="diagram">
-                <button onclick="copyReadme()" style="margin-bottom: 10px; margin-right: 10px;">Copy to Clipboard</button>
-                <button onclick="downloadReadme()" style="margin-bottom: 10px;">Download README.md</button>
-                <div id="readme-content" style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;"></div>
+            
+            <div id="frontend-content">
+                <div class="diagram" id="frontend-preview" style="background: #f8f9fa; min-height: 200px; display: flex; align-items: center; justify-content: center; color: #666;">
+                    No frontend preview available
+                </div>
+            </div>
+            
+            <div id="readme-content-section">
+                <div class="diagram">
+                    <button onclick="copyReadme()" style="margin-bottom: 10px; margin-right: 10px;">Copy to Clipboard</button>
+                    <button onclick="downloadReadme()" style="margin-bottom: 10px;">Download README.md</button>
+                    <div id="readme-content" style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; line-height: 1.6;"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -156,32 +178,18 @@
     <script src="aws-tech-diagram.js"></script>
     <script src="aws-infrastructure-designer.js"></script>
     <script>
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            
-            if (!file) return;
-            
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('results').style.display = 'none';
-            
-            const formData = new FormData();
-            formData.append('file', file);
-            
-            try {
-                const response = await fetch('http://localhost:8000/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                displayResults(data);
-            } catch (error) {
-                alert('Error: ' + error.message);
-            } finally {
-                document.getElementById('loading').style.display = 'none';
+        // Load results from sessionStorage
+        window.addEventListener('load', function() {
+            const resultsData = sessionStorage.getItem('analysisResults');
+            if (!resultsData) {
+                alert('No analysis results found. Please upload a project first.');
+                window.location.href = 'upload.html';
+                return;
             }
-        }
+            
+            const data = JSON.parse(resultsData);
+            displayResults(data);
+        });
         
         function displayResults(data) {
             // Display languages
@@ -190,11 +198,10 @@
                 .map(([lang, count]) => `<div class="item" onclick="filterFiles('${lang}', 'language')" style="cursor: pointer;">${lang}: ${count} files</div>`)
                 .join('');
             
-            // Display services (combine detected services and AWS recommendations)
+            // Display services
             const servicesDiv = document.getElementById('services');
             let allServices = {...data.services};
             
-            // Add AWS recommended services if available
             if (data.aws_infrastructure_diagram && data.aws_infrastructure_diagram.summary) {
                 const awsServices = data.aws_infrastructure_diagram.summary.service_types || [];
                 awsServices.forEach(service => {
@@ -239,8 +246,27 @@
                 fileDetailsDiv.innerHTML = '<div class="item">No file details available</div>';
             }
             
-            // Store file details globally for filtering
             window.allFileDetails = data.file_details || [];
+            
+            // Display README content
+            const readmeDiv = document.getElementById('readme-content');
+            const readmeContent = data.readme_content || 'No README content generated';
+            
+            const htmlContent = readmeContent
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^- (.*$)/gm, '<li>$1</li>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/\n/g, '<br>');
+            
+            const finalContent = htmlContent.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
+            readmeDiv.innerHTML = finalContent;
+            
+            window.currentReadmeFilename = data.readme_filename;
             
             // Display frontend preview
             const frontendPreviewDiv = document.getElementById('frontend-preview');
@@ -251,30 +277,6 @@
             } else {
                 frontendPreviewDiv.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;"><h3>No Frontend Detected</h3><p>This project appears to be a backend/CLI application without a web interface.</p></div>';
             }
-            
-            // Display README content
-            const readmeDiv = document.getElementById('readme-content');
-            const readmeContent = data.readme_content || 'No README content generated';
-            
-            // Convert basic Markdown to HTML for better display
-            const htmlContent = readmeContent
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold text
-                .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic text
-                .replace(/^# (.*$)/gm, '<h1>$1</h1>') // H1 headers
-                .replace(/^## (.*$)/gm, '<h2>$1</h2>') // H2 headers
-                .replace(/^### (.*$)/gm, '<h3>$1</h3>') // H3 headers
-                .replace(/^- (.*$)/gm, '<li>$1</li>') // List items
-                .replace(/`([^`]+)`/g, '<code>$1</code>') // Inline code
-                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>') // Code blocks
-                .replace(/\n/g, '<br>'); // Line breaks
-            
-            // Wrap list items in ul tags
-            const finalContent = htmlContent.replace(/(<li>.*<\/li>)/g, '<ul>$1</ul>');
-            
-            readmeDiv.innerHTML = finalContent;
-            
-            // Store readme filename for download
-            window.currentReadmeFilename = data.readme_filename;
             
             // Display diagram nodes
             const nodesDiv = document.getElementById('nodes');
@@ -380,11 +382,9 @@
                     `<div class="item">${edge.source} &rarr; ${edge.target}</div>`
                 ).join('');
             
-            // Display AWS Infrastructure diagram using new designer
+            // Display AWS Infrastructure diagram
             const terraformDiv = document.getElementById('terraform-diagram');
             if (data.aws_infrastructure_diagram) {
-                console.log('AWS Infrastructure Data:', data.aws_infrastructure_diagram);
-                // Always use new AWS infrastructure designer
                 try {
                     renderAWSInfrastructureDiagram(terraformDiv, data.aws_infrastructure_diagram);
                 } catch (error) {
@@ -407,80 +407,15 @@
                     `;
                 }
             } else {
-                // Fallback to old diagram or empty state
-                if (data.terraform_infrastructure && data.terraform_infrastructure.diagram) {
-                    const diagram = data.terraform_infrastructure.diagram;
-                    
-                    if (diagram.style === 'tech_diagram' && diagram.services && diagram.services.length > 0) {
-                        // Use old AWS tech diagram renderer as fallback
-                        const awsDiagram = renderAwsTechDiagram(diagram);
-                        terraformDiv.innerHTML = '';
-                        terraformDiv.appendChild(awsDiagram);
-                        
-                        // Add Terraform code preview below
-                        const codePreview = document.createElement('div');
-                        codePreview.style.cssText = `
-                            margin-top: 20px;
-                            background: #1e1e1e;
-                            color: #d4d4d4;
-                            padding: 15px;
-                            border-radius: 6px;
-                            font-family: monospace;
-                            font-size: 12px;
-                            overflow-x: auto;
-                            max-height: 300px;
-                            overflow-y: auto;
-                        `;
-                        codePreview.innerHTML = `
-                            <h4 style="color: #d4d4d4; margin-top: 0;">Generated Terraform Configuration:</h4>
-                            <pre>${data.terraform_hcl}</pre>
-                        `;
-                        terraformDiv.appendChild(codePreview);
-                    } else {
-                        // No services detected
-                        terraformDiv.innerHTML = `
-                            <div style="text-align: center; padding: 40px; color: #666;">
-                                <h3>No Infrastructure Services Detected</h3>
-                                <p>This project appears to be a simple application without complex infrastructure requirements.</p>
-                                <p>Languages detected: ${Object.keys(data.languages).join(', ')}</p>
-                            </div>
-                        `;
-                    }
-                } else {
-                    terraformDiv.innerHTML = `
-                        <div style="text-align: center; padding: 40px; color: #666;">
-                            <h3>Generating Infrastructure Recommendations</h3>
-                            <p>Analyzing your project to suggest appropriate AWS infrastructure...</p>
-                        </div>
-                    `;
-                }
+                terraformDiv.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <h3>No Infrastructure Services Detected</h3>
+                        <p>This project appears to be a simple application without complex infrastructure requirements.</p>
+                        <p>Languages detected: ${Object.keys(data.languages).join(', ')}</p>
+                    </div>
+                `;
             }
-            
-
-            
-            document.getElementById('results').style.display = 'block';
         }
-        
-        // Drag and drop
-        const uploadArea = document.querySelector('.upload-area');
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#007bff';
-        });
-        
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.borderColor = '#ccc';
-        });
-        
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = '#ccc';
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                document.getElementById('fileInput').files = files;
-                uploadFile();
-            }
-        });
         
         function filterFiles(term, type) {
             const fileDetailsDiv = document.getElementById('file-details');
@@ -542,6 +477,21 @@
                 document.body.removeChild(link);
             } else {
                 alert('No README file available for download');
+            }
+        }
+        
+        function showTurtle(number) {
+            const canvas = document.getElementById('canvas');
+            canvas.innerHTML = `<img src="Images/turtle${number}.jpg" alt="Turtle ${number}" style="max-width: 100%; height: auto;">`;
+        }
+        
+        function showInCanvas(sectionId) {
+            const canvas = document.getElementById('canvas');
+            const content = document.getElementById(sectionId + '-content');
+            if (content) {
+                canvas.innerHTML = content.innerHTML;
+            } else if (sectionId === 'readme') {
+                canvas.innerHTML = document.getElementById('readme-content-section').innerHTML;
             }
         }
     </script>
