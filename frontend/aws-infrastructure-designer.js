@@ -440,10 +440,10 @@ class AWSInfrastructureDesigner {
                 const fromRect = connection.fromNode.getBoundingClientRect();
                 const toRect = connection.toNode.getBoundingClientRect();
                 
-                const startX = fromRect.left - containerRect.left + fromRect.width / 2;
-                const startY = fromRect.top - containerRect.top + fromRect.height / 2;
-                const endX = toRect.left - containerRect.left + toRect.width / 2;
-                const endY = toRect.top - containerRect.top + toRect.height / 2;
+                const startX = fromRect.left - containerRect.left + container.scrollLeft + fromRect.width / 2;
+                const startY = fromRect.top - containerRect.top + container.scrollTop + fromRect.height / 2;
+                const endX = toRect.left - containerRect.left + container.scrollLeft + toRect.width / 2;
+                const endY = toRect.top - containerRect.top + container.scrollTop + toRect.height / 2;
                 
                 const length = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
                 const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI;
@@ -497,10 +497,10 @@ class AWSInfrastructureDesigner {
         const fromNode = document.elementFromPoint(startPos.x, startPos.y).closest('.aws-service');
         const toNode = document.elementFromPoint(endPos.x, endPos.y).closest('.aws-service');
         
-        const startX = startPos.x - contentRect.left;
-        const startY = startPos.y - contentRect.top;
-        const endX = endPos.x - contentRect.left;
-        const endY = endPos.y - contentRect.top;
+        const startX = startPos.x - contentRect.left + content.scrollLeft;
+        const startY = startPos.y - contentRect.top + content.scrollTop;
+        const endX = endPos.x - contentRect.left + content.scrollLeft;
+        const endY = endPos.y - contentRect.top + content.scrollTop;
         
         const connection = document.createElement('div');
         const length = Math.sqrt((endX-startX)**2 + (endY-startY)**2);
