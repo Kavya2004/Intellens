@@ -119,24 +119,392 @@
     .learn{display:block;text-align:center;margin:6px 0 22px;color:var(--green-500);font-weight:700;text-decoration:none}
 
     /* ========== LOADER SCREEN ========== */
-    .loader-wrap{display:grid;place-items:center;min-height:100vh}
-    .loader-card{width:min(780px,92vw);padding:32px}
-    .dot-row{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
-    .dot{width:16px;height:16px;border-radius:50%;background:var(--green-300);animation:bob 1.2s ease-in-out infinite;}
-    .dot:nth-child(2){background:#E6C229;animation-delay:.15s}
-    .dot:nth-child(3){background:var(--green-500);animation-delay:.30s}
-    .dot:nth-child(4){background:#E6C229;animation-delay:.45s}
-    @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-    .loader-title{text-align:center;font-size:clamp(24px,4.5vw,36px);font-weight:800;margin:0 0 4px}
-    .loader-sub{text-align:center;color:var(--muted);margin-bottom:16px}
-    .loader-steps{display:grid;gap:12px;margin-top:8px}
-    .step{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e6eee6;padding:12px;border-radius:12px}
-    .step .dot-mini{width:8px;height:8px;border-radius:50%;background:var(--green-400)}
+/* ========== LOADER SCREEN (Cute Turtle Version) ========== */
+.loader-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f0fff0 0%, #e6f7ec 70%, #fafffa 100%);
+}
+.loader-card {
+  width: min(880px, 94vw);
+  padding: 28px 28px 22px;
+  border-radius: 22px;
+  background: #ffffffcc;
+  backdrop-filter: blur(8px);
+  border: 1px solid #e1eee2;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* Header */
+.loader-title {
+  text-align: center;
+  font-size: clamp(24px, 4.5vw, 36px);
+  font-weight: 900;
+  margin: 0 0 4px;
+}
+.loader-sub {
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* === CUTE TURTLE SCENE === */
+/* === CUTE TURTLE SCENE (Day → Night Transition) === */
+.scene {
+  position: relative;
+  overflow: hidden;
+  border: 2px solid #cce6cc;
+  border-radius: 20px;
+  height: 220px;
+  margin: 8px 0 16px;
+  background: linear-gradient(180deg, #aee9ff 0%, #e6f7ec 60%, #fff 100%);
+  animation: dayToNight 20s ease-in-out infinite alternate;
+  box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.08);
+}
+
+/* 🌞 Sun + 🌙 Moon alternating */
+.scene::before {
+  content: "☀️";
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  font-size: 32px;
+  animation: sunMoonShift 20s ease-in-out infinite alternate;
+  transition: opacity 2s ease;
+}
+
+@keyframes dayToNight {
+  0% {
+    background: linear-gradient(180deg, #aee9ff 0%, #e6f7ec 60%, #fff 100%);
+  }
+  50% {
+    background: linear-gradient(180deg, #5da9e9 0%, #a3d8c0 60%, #eaf8e8 100%);
+  }
+  100% {
+    background: linear-gradient(180deg, #0c1445 0%, #2c3e50 60%, #5a7c70 100%);
+  }
+}
+
+@keyframes sunMoonShift {
+  0% {
+    content: "☀️";
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+  100% {
+    content: "🌙";
+    transform: translateY(-30px);
+    opacity: 1;
+  }
+}
+
+/* 🌥 Clouds drifting */
+.clouds {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 10% 30%, #fff 20%, transparent 60%) 0 0/240px 80px,
+    radial-gradient(circle at 60% 40%, #fff 25%, transparent 60%) 200px 40px/280px 90px;
+  animation: cloudsDrift 40s linear infinite;
+  opacity: 0.8;
+}
+
+@keyframes cloudsDrift {
+  to {
+    background-position: -400px 0, -300px 0;
+  }
+}
+
+/* 🌟 Stars appear at night */
+.star {
+  position: absolute;
+  background: radial-gradient(circle, #fff 0%, rgba(255, 255, 255, 0) 60%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  opacity: 0;
+  animation: starTwinkle 20s ease-in-out infinite alternate;
+}
+
+.star:nth-child(1) { top: 20px; left: 40px; animation-delay: 3s; }
+.star:nth-child(2) { top: 60px; left: 160px; animation-delay: 7s; }
+.star:nth-child(3) { top: 40px; right: 120px; animation-delay: 11s; }
+.star:nth-child(4) { top: 90px; right: 40px; animation-delay: 5s; }
+
+@keyframes starTwinkle {
+  0%, 40% {
+    opacity: 0;
+  }
+  50%, 100% {
+    opacity: 1;
+  }
+}
+
+/* 🌿 Ground + Track */
+.ground {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 70px;
+  background: linear-gradient(0deg, #66b969 0%, #7ed57e 50%, #b4ebb2 100%);
+  border-top: 2px solid #a5e5a5;
+}
+
+.track {
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background: repeating-linear-gradient(90deg, #2f7d32 0 60px, transparent 60px 100px);
+  animation: trackSlide 1.4s linear infinite;
+  opacity: 0.85;
+}
+
+@keyframes trackSlide {
+  to {
+    background-position-x: -100px;
+  }
+}
+
+/* ✨ sparkles */
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+.sparkle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #fff 0%, rgba(255, 255, 255, 0) 70%);
+  border-radius: 50%;
+  animation: sparkle 3s ease-in-out infinite;
+}
+.sparkle:nth-child(1) {
+  top: 20px;
+  left: 40px;
+  animation-delay: 0s;
+}
+.sparkle:nth-child(2) {
+  top: 50px;
+  left: 150px;
+  animation-delay: 1s;
+}
+.sparkle:nth-child(3) {
+  top: 30px;
+  right: 100px;
+  animation-delay: 2s;
+}
+.sparkle:nth-child(4) {
+  top: 80px;
+  right: 40px;
+  animation-delay: 2.5s;
+}
+
+/* 🐢 Turtle */
+.turtle {
+  --size: 90px;
+  position: absolute;
+  bottom: 42px;
+  left: -100px;
+  width: var(--size);
+  height: var(--size);
+  animation: turtleRun 4.5s cubic-bezier(.19, 1, .22, 1) infinite;
+  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.2));
+}
+.turtle .shell {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #4e9a51 0%, #2f7d32 80%);
+  border: 4px solid #215821;
+  position: relative;
+  overflow: hidden;
+  transform-origin: 50% 70%;
+  animation: shellBob 1s ease-in-out infinite;
+}
+.turtle .shell::before {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 3px dashed rgba(255, 255, 255, 0.4);
+}
+.turtle .head {
+  position: absolute;
+  right: -16px;
+  top: 35%;
+  width: 30px;
+  height: 24px;
+  border-radius: 40px;
+  background: #78c978;
+  border: 3px solid #215821;
+  transform-origin: left center;
+  animation: headBob 1s ease-in-out infinite;
+}
+.turtle .eye {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  background: #122012;
+  border-radius: 50%;
+}
+.turtle .smile {
+  position: absolute;
+  right: 4px;
+  bottom: 6px;
+  width: 10px;
+  height: 2px;
+  border-bottom: 2px solid #122012;
+  border-radius: 50%;
+}
+.turtle .leg {
+  position: absolute;
+  width: 18px;
+  height: 10px;
+  background: #78c978;
+  border: 2px solid #215821;
+  border-radius: 10px;
+  bottom: -6px;
+  animation: legMove 0.4s ease-in-out infinite;
+}
+.turtle .leg.l1 {
+  left: 8px;
+  animation-delay: 0s;
+}
+.turtle .leg.r1 {
+  left: 42px;
+  animation-delay: 0.2s;
+}
+.turtle .leg.l2 {
+  left: 22px;
+  animation-delay: 0.1s;
+}
+.turtle .leg.r2 {
+  left: 54px;
+  animation-delay: 0.3s;
+}
+.turtle .tail {
+  position: absolute;
+  left: -8px;
+  bottom: 24px;
+  width: 10px;
+  height: 6px;
+  border-radius: 50%;
+  background: #66b969;
+  border: 2px solid #215821;
+  transform-origin: right center;
+  animation: tailWag 0.6s ease-in-out infinite;
+}
+@keyframes turtleRun {
+  0% {
+    left: -110px;
+  }
+  60% {
+    left: calc(100% - 110px);
+  }
+  100% {
+    left: calc(100% + 40px);
+  }
+}
+@keyframes shellBob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(2deg);
+  }
+}
+@keyframes headBob {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(4deg);
+  }
+}
+@keyframes legMove {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(2px);
+  }
+}
+@keyframes tailWag {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+}
+
+/* Progress bar + Steps (same as before) */
+.progress {
+  height: 10px;
+  background: #e9f3ea;
+  border: 1px solid #d9e7da;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0 2px 6px;
+}
+.progress > .bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #3f8f43, #5aa95d);
+  box-shadow: 0 0 12px rgba(47, 125, 50, 0.35) inset;
+  transition: width 0.6s ease;
+}
+.loader-steps {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #e6eee6;
+  padding: 12px;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+.step .dot-mini {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9fbf9f;
+}
+.step.active {
+  border-color: #cfe8cf;
+  background: #f5fbf6;
+  transform: translateX(4px);
+}
+.step.active .dot-mini {
+  background: #2f7d32;
+}
 
     /* ========== DASHBOARD ========== */
-/* ========== DASHBOARD ========== */
-/* ========== DASHBOARD (one-page, balanced design) ========== */
-/* ========== DASHBOARD (Enhanced Polished Design) ========== */
+
 #dashboard {
   height: 100vh;
   background: radial-gradient(circle at 25% 25%, #f4f9f4 0%, #eaf3ea 100%);
@@ -435,10 +803,37 @@
   <section id="loader">
     <div class="loader-wrap">
       <div class="loader-card card">
-        <div class="dot-row"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
         <div class="loader-title">Analyzing your project…</div>
         <div class="loader-sub">Building your LEGO structure</div>
-        <div class="loader-steps">
+  
+        <div class="scene" aria-hidden="true">
+          <div class="clouds"></div>
+          <div class="sparkle"></div>
+          <div class="sparkle"></div>
+          <div class="sparkle"></div>
+          <div class="sparkle"></div>
+          <div class="ground"></div>
+          <div class="track"></div>
+        
+          <div class="turtle">
+            <div class="shell"></div>
+            <div class="head">
+              <div class="eye"></div>
+              <div class="smile"></div>
+            </div>
+            <div class="leg l1"></div>
+            <div class="leg r1"></div>
+            <div class="leg l2"></div>
+            <div class="leg r2"></div>
+            <div class="tail"></div>
+          </div>
+        </div>        
+  
+        <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+          <div class="bar" id="loaderBar"></div>
+        </div>
+  
+        <div class="loader-steps" id="loaderSteps">
           <div class="step"><span class="dot-mini"></span> Extracting files</div>
           <div class="step"><span class="dot-mini"></span> Analyzing architecture</div>
           <div class="step"><span class="dot-mini"></span> Processing Infrastructure</div>
@@ -446,7 +841,7 @@
         </div>
       </div>
     </div>
-  </section>
+  </section>  
 
   <!-- ============== DASHBOARD ============== -->
   <section id="dashboard">
@@ -743,13 +1138,40 @@
       const f = fileInput.files[0]; if(!f) return; handleUpload(f);
     });
 
+        // ===== Loader UX helpers =====
+    let loaderInterval = null;
+    let loaderTick = 0;
+
+    function startLoaderUI() {
+      const steps = Array.from(document.querySelectorAll('#loaderSteps .step'));
+      const bar = document.getElementById('loaderBar');
+      loaderTick = 0;
+
+      steps.forEach(s => s.classList.remove('active'));
+      bar.style.width = '0%';
+
+      loaderInterval = setInterval(() => {
+        loaderTick++;
+        const active = loaderTick % steps.length;
+        steps.forEach((s,i) => s.classList.toggle('active', i === active));
+        const pseudo = Math.min(92, parseInt(bar.style.width||'0', 10) + 2);
+        bar.style.width = pseudo + '%';
+      }, 650);
+    }
+
+    function stopLoaderUI() {
+      const bar = document.getElementById('loaderBar');
+      if (loaderInterval) { clearInterval(loaderInterval); loaderInterval = null; }
+      requestAnimationFrame(() => { bar.style.width = '100%'; });
+    }
     async function handleUpload(file){
       startScreen.classList.remove("active");
       loader.classList.add("active");
-
+      startLoaderUI(); // 🐢 start turtle + progress bar
+    
       const formData = new FormData();
       formData.append("file", file);
-
+    
       try{
         const res = await fetch("http://localhost:8000/upload", { method: "POST", body: formData });
         const data = await res.json();
@@ -758,11 +1180,13 @@
         alert("Upload failed: " + e.message + ". We'll continue with an empty UI so you can test the flow.");
         analysisData = {};
       }finally{
+        stopLoaderUI(); // ✅ finish turtle + bar
         loader.classList.remove("active");
         dashboard.classList.add("active");
         initDashboard();
       }
     }
+    
 
     function initDashboard(){
       document.querySelectorAll(".menu-block").forEach(btn => {
@@ -1151,15 +1575,51 @@
       document.getElementById('docs-readme').textContent = (data?.readme_content || '').slice(0,1600) || 'No README content generated';
     }  
     
-    // === 🏠 HOME BUTTON ===
-    document.getElementById("homeBtn").addEventListener("click", () => {
-      dashboard.classList.remove("active");
-      startScreen.classList.add("active");
+    function goHome() {
+      // 🧹 Step 1: Hide dashboard & loader
+      document.getElementById("dashboard").classList.remove("active");
+      document.getElementById("loader").classList.remove("active");
+    
+      // 🧩 Step 2: Reset LEGO build stage
+      const buildImg = document.getElementById("buildImg");
+      if (buildImg) {
+        buildImg.src = "";
+        buildImg.classList.remove("show");
+      }
+      const stageEmpty = document.getElementById("stageEmpty");
+      if (stageEmpty) stageEmpty.style.display = "block";
+    
+      // 🧱 Step 3: Reset block-building state
+      clickedSet = new Set();
       stageIndex = -1;
-      clickedSet.clear();
-      buildImg.src = "";
-      stageEmpty.style.display = "block";
-    });
+    
+      // 🪄 Step 4: Hide insights, popups, and overlays
+      document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+      document.getElementById("insightsBackdrop")?.classList.remove("show");
+      document.getElementById("insightsModal")?.classList.remove("show");
+      document.getElementById("servicePopup")?.style.setProperty("display", "none");
+      document.getElementById("servicePopupBackdrop")?.style.setProperty("display", "none");
+    
+      // 🐢 Step 5: Hide the “Open All” button
+      const turtleOpenAll = document.getElementById("turtleOpenAll");
+      if (turtleOpenAll) turtleOpenAll.style.display = "none";
+    
+      // 🌿 Step 6: Fade-in transition back to start screen
+      const startScreen = document.getElementById("start-screen");
+      startScreen.classList.add("active");
+      startScreen.style.opacity = 0;
+      requestAnimationFrame(() => {
+        startScreen.style.transition = "opacity 0.6s ease";
+        startScreen.style.opacity = 1;
+      });
+    
+      // 🌀 Step 7: Reset scroll and body overflow
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      document.body.style.overflow = "hidden";
+    }
+    
+    // 🎯 Connect button
+    document.getElementById("homeBtn").addEventListener("click", goHome);
     
  let draggedSection = null;
 
