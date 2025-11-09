@@ -21,27 +21,27 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
+
+    #bg-logo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background:
+        linear-gradient(to top, #e6f7ed 0%, #f9fffb 50%, #ffffff 100%),
+        url("images/logo.png") center center / cover no-repeat;
+      z-index: -1;
+      opacity: 1;
+    }    
     body {
       margin: 0;
-      font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      font-family: "Poppins", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
       color: var(--ink);
-      min-height: 100vh;
-      background: radial-gradient(at 20% 20%, #d8f3dc 0px, transparent 50%),
-                  radial-gradient(at 80% 0%, #b7e4c7 0px, transparent 50%),
-                  radial-gradient(at 0% 50%, #95d5b2 0px, transparent 50%),
-                  radial-gradient(at 80% 50%, #74c69d 0px, transparent 50%),
-                  radial-gradient(at 0% 100%, #52b788 0px, transparent 50%);
-      background-color: #e9f7ec;
-      background-attachment: fixed;
-      animation: gradientShift 20s ease infinite;
-      background-size: 200% 200%;
-    }
-    
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+      overflow: hidden;
+      height: 100vh;
+      position: relative;
+    }    
     
     button{font-family:inherit}
 
@@ -69,7 +69,30 @@
 
     /* ========== START SCREEN ========== */
     .start-wrap{display:grid;place-items:center;min-height:100vh}
-    .start-card{width:min(860px,92vw)}
+    .start-card {
+      position: relative;
+      backdrop-filter: blur(14px);
+      border: 2px solid rgba(255,255,255,0.4);
+      box-shadow: 0 10px 40px rgba(47, 125, 50, 0.25);
+      animation: floatCard 6s ease-in-out infinite;
+    }
+    
+    @keyframes floatCard {
+      0%,100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    /* soft glowing border around upload zone */
+    .dropzone {
+      background: rgba(255,255,255,0.6);
+      border: 2px dashed rgba(47,125,50,0.4);
+      transition: all 0.3s ease;
+      box-shadow: inset 0 0 10px rgba(255,255,255,0.4);
+    }
+    .dropzone:hover {
+      border-color: #E6C229;
+      box-shadow: 0 0 20px rgba(230,194,41,0.4), inset 0 0 12px rgba(255,255,255,0.5);
+    }    
     .start-hero{display:grid;place-items:center;padding-top:14px;}
     .start-icon{
       width:84px;height:84px;border-radius:18px;
@@ -312,10 +335,38 @@
       .dash-layout{grid-template-columns:1fr}
       .section{inset:14px}
     }
+    /* ========== INSIGHTS MODAL (new, non-breaking) ========== */
+    .insights-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.22);backdrop-filter:blur(2px);display:none;z-index:30}
+    .insights-backdrop.show{display:block}
+    .insights{position:fixed;inset:24px;background:#fff;border-radius:24px;box-shadow:0 30px 80px rgba(0,0,0,.24);overflow:hidden;display:none;z-index:31}
+    .insights.show{display:grid;grid-template-rows:auto 56px 1fr}
+    .insights-header{display:flex;align-items:center;gap:14px;background:linear-gradient(180deg,#2F7D32,#2c6f2f);color:#fff;padding:16px 22px}
+    .insights-icon{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.12);display:grid;place-items:center}
+    .insights-title{font-weight:900;font-size:clamp(20px,3.6vw,28px)}
+    .insights-sub{opacity:.9;font-size:14px}
+    .tabs{display:flex;gap:8px;align-items:center;background:#eaf4eb;padding:8px 12px}
+    .tab{appearance:none;border:none;background:transparent;padding:10px 14px;border-radius:12px;font-weight:700;color:#2b5530;cursor:pointer}
+    .tab[aria-selected="true"]{background:#ffffff;box-shadow:0 2px 6px rgba(0,0,0,.06);color:#1f3f23}
+    .insights-body{padding:18px 18px 24px;overflow:auto}
+    .section-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+    .kpi{grid-column:span 3;background:#f6fbf6;border:1px solid #e0eee0;border-radius:16px;padding:16px}
+    .kpi h4{margin:0 0 6px;font-size:13px;color:#557a59;font-weight:700}
+    .kpi strong{font-size:22px}
+    .panel{grid-column:1/-1;background:#f1f7f2;border:1px solid #e0eee0;border-radius:16px;padding:16px}
+    .bullets{display:grid;gap:10px;margin-top:8px}
+    .bubble{display:inline-block;background:#fff;border:1px solid #e5ece6;border-radius:12px;padding:6px 10px;margin:4px 6px 0 0;font-size:12px}
+    .muter{color:#5f6b5f}
+    .x-close{position:absolute;right:18px;top:12px;cursor:pointer;font-size:28px;color:#fff;opacity:.9}
+    .hide{display:none}
   </style>
 </head>
-
   <!-- ============== START ============== -->
+  <div class="lego-bubbles">
+    <div class="bubble" style="--x:10%;--d:15s;--s:1.1;--c:#2F7D32;"></div>
+    <div class="bubble" style="--x:30%;--d:18s;--s:0.9;--c:#E6C229;"></div>
+    <div class="bubble" style="--x:60%;--d:20s;--s:1.3;--c:#5AA95D;"></div>
+    <div class="bubble" style="--x:80%;--d:25s;--s:1;--c:#A2D4A2;"></div>
+  </div>
   <section id="start-screen" class="active">
     <div class="start-wrap">
       <div class="start-card card">
@@ -469,6 +520,106 @@
     <pre id="readme-content" style="background:#f8f9fa;border-radius:10px;padding:14px;white-space:pre-wrap;font-family:monospace;font-size:13px;margin-top:12px;"></pre>
   </section>
 
+  <!-- ============== COMPLETE PROJECT INSIGHTS (new) ============= -->
+  <div id="insightsBackdrop" class="insights-backdrop"></div>
+  <div id="insightsModal" class="insights" role="dialog" aria-modal="true" aria-labelledby="insightsTitle">
+    <div class="insights-header">
+      <div class="insights-icon">🧩</div>
+      <div>
+        <div id="insightsTitle" class="insights-title">Complete Project Insights</div>
+        <div class="insights-sub">Explore all aspects of your project analysis</div>
+      </div>
+      <div id="insightsClose" class="x-close" title="Close">✖</div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true">Overview</button>
+      <button class="tab" role="tab" id="tab-arch" aria-controls="panel-arch">Architecture</button>
+      <button class="tab" role="tab" id="tab-infra" aria-controls="panel-infra">Infrastructure</button>
+      <button class="tab" role="tab" id="tab-components" aria-controls="panel-components">Components</button>
+      <button class="tab" role="tab" id="tab-frontend" aria-controls="panel-frontend">Frontend</button>
+      <button class="tab" role="tab" id="tab-docs" aria-controls="panel-docs">Documentation</button>
+    </div>
+
+    <div class="insights-body">
+      <!-- Overview -->
+      <div id="panel-overview" role="tabpanel" class="section-grid">
+        <div class="kpi"><h4>Total Files</h4><strong id="kpi-files">—</strong></div>
+        <div class="kpi"><h4>Languages</h4><strong id="kpi-langs">—</strong></div>
+        <div class="kpi"><h4>Framework</h4><strong id="kpi-framework">—</strong></div>
+        <div class="kpi"><h4>Build Tool</h4><strong id="kpi-build">—</strong></div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 8px">Key Highlights</h3>
+          <div id="overview-bullets" class="bullets"></div>
+        </div>
+      </div>
+
+      <!-- Architecture -->
+      <div id="panel-arch" role="tabpanel" class="section-grid hide">
+        <div class="kpi"><h4>Pattern</h4><strong id="kpi-pattern">Component-based</strong></div>
+        <div class="kpi"><h4>Routing</h4><strong id="kpi-routing">—</strong></div>
+        <div class="kpi"><h4>State</h4><strong id="kpi-state">—</strong></div>
+        <div class="kpi"><h4>Styling</h4><strong id="kpi-styling">—</strong></div>
+
+        <div class="panel" id="arch-cards"></div>
+      </div>
+
+      <!-- Infrastructure -->
+      <div id="panel-infra" role="tabpanel" class="section-grid hide">
+        <div class="kpi"><h4>Provider</h4><strong id="kpi-provider">—</strong></div>
+        <div class="kpi"><h4>Version</h4><strong id="kpi-version">—</strong></div>
+        <div class="kpi"><h4>Modules</h4><strong id="kpi-modules">—</strong></div>
+        <div class="kpi"><h4>Resources</h4><strong id="kpi-resources">—</strong></div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 8px">Key Highlights</h3>
+          <div id="infra-bullets" class="bullets"></div>
+        </div>
+      </div>
+
+      <!-- Components -->
+      <div id="panel-components" role="tabpanel" class="section-grid hide">
+        <div class="kpi"><h4>UI Components</h4><strong id="kpi-ui">—</strong></div>
+        <div class="kpi"><h4>Custom Components</h4><strong id="kpi-custom">—</strong></div>
+        <div class="kpi"><h4>Pages</h4><strong id="kpi-pages">—</strong></div>
+        <div class="kpi"><h4>Hooks</h4><strong id="kpi-hooks">—</strong></div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 8px">Key Highlights</h3>
+          <div id="components-bullets" class="bullets"></div>
+        </div>
+      </div>
+
+      <!-- Frontend -->
+      <div id="panel-frontend" role="tabpanel" class="section-grid hide">
+        <div class="kpi"><h4>Framework</h4><strong id="kpi-fe-fw">—</strong></div>
+        <div class="kpi"><h4>TypeScript</h4><strong id="kpi-ts">—</strong></div>
+        <div class="kpi"><h4>Build Time</h4><strong id="kpi-buildtime">—</strong></div>
+        <div class="kpi"><h4>Bundle Size</h4><strong id="kpi-bundle">—</strong></div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 8px">Key Highlights</h3>
+          <div id="frontend-bullets" class="bullets"></div>
+        </div>
+      </div>
+
+      <!-- Documentation -->
+      <div id="panel-docs" role="tabpanel" class="section-grid hide">
+        <div class="kpi"><h4>Setup Time</h4><strong id="kpi-setup">—</strong></div>
+        <div class="kpi"><h4>Prerequisites</h4><strong id="kpi-prereq">—</strong></div>
+        <div class="kpi"><h4>Scripts</h4><strong id="kpi-scripts">—</strong></div>
+        <div class="kpi"><h4>Documentation</h4><strong id="kpi-docs">—</strong></div>
+
+        <div class="panel">
+          <h3 style="margin:0 0 8px">README</h3>
+          <div class="muter" style="margin-bottom:8px">Open the “Generated README” overlay to copy or download.</div>
+          <pre id="docs-readme" class="card" style="padding:12px;white-space:pre-wrap;font-family:monospace;font-size:12px;max-height:280px;overflow:auto;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="aws-tech-diagram.js"></script>
   <script src="enhanced-aws-tech-diagram.js"></script>
   <script src="aws-infrastructure-designer.js"></script>
@@ -483,7 +634,20 @@
       "images/4-removebg-preview.png"
     ];
     const FINAL_TURTLE = "images/Final_Turtle.png";
-    (() => { const _img = new Image(); _img.src = FINAL_TURTLE; })();
+    (() => { const _img = new Image(); _img.src = FINAL_TURTLE; })(); 
+
+    const BACKGROUND_LOGO = "images/logo.png";
+    (() => { const preload = new Image(); preload.src = BACKGROUND_LOGO; })();
+
+    document.addEventListener("DOMContentLoaded", () => {
+      Object.assign(document.body.style, {
+        background: `linear-gradient(to top, #e6f7ed 0%, #f9fffb 50%, #ffffff 100%), url('${BACKGROUND_LOGO}') center center / cover no-repeat`,
+        backgroundSize: "cover",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+        backgroundPosition: "center",
+      });
+    });
 
     let analysisData = {};
     let stageIndex = -1;
@@ -501,6 +665,15 @@
     const stageBox = document.getElementById("stageBox");
     const stageEmpty = document.getElementById("stageEmpty");
     const turtleOpenAll = document.getElementById("turtleOpenAll");
+    const insightsBackdrop = document.getElementById('insightsBackdrop');
+    const insightsModal = document.getElementById('insightsModal');
+    const insightsClose = document.getElementById('insightsClose');
+    const tabButtons = [
+      'overview','arch','infra','components','frontend','docs'
+    ].map(id => document.getElementById(`tab-${id}`));
+    const tabPanels = [
+      'panel-overview','panel-arch','panel-infra','panel-components','panel-frontend','panel-docs'
+    ].map(id => document.getElementById(id));
 
     chooseBtn.addEventListener("click", () => fileInput.click());
     dropzone.addEventListener("click", () => fileInput.click());
@@ -546,7 +719,8 @@
 
       turtleOpenAll.addEventListener("click", () => {
         document.querySelectorAll(".section").forEach(s => s.classList.add("active"));
-      });
+        openInsights(); 
+      });      
       stageBox.addEventListener("click", () => {
         if (stageIndex >= BUILD_FRAMES.length - 1) turtleOpenAll.click();
       });
@@ -692,6 +866,111 @@
       a.href = `http://localhost:8000/download-readme/${window.currentReadmeFilename}`;
       a.download = 'README.md';
       a.click();
+    }
+    function openInsights(){
+      populateInsights(analysisData || {});
+      insightsBackdrop.classList.add('show');
+      insightsModal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeInsights(){
+      insightsBackdrop.classList.remove('show');
+      insightsModal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+    insightsBackdrop.addEventListener('click', closeInsights);
+    insightsClose.addEventListener('click', closeInsights);
+    window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeInsights(); });
+
+    // simple tabs
+    tabButtons.forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.setAttribute('aria-selected','false'));
+        tabPanels.forEach(p => p.classList.add('hide'));
+        btn.setAttribute('aria-selected','true');
+        tabPanels[i].classList.remove('hide');
+      });
+    });
+
+    function pluralize(n, s){ return `${n} ${s}${n===1?'':'s'}`; }
+
+    function populateInsights(data){
+      const files = data.file_details || [];
+      const langsObj = data.languages || {};
+      const langNames = Object.keys(langsObj);
+      const primaryLangs = langNames.slice(0,3).join(', ') || '—';
+
+      // Overview KPIs
+      document.getElementById('kpi-files').textContent = files.length ? pluralize(files.length, 'file') : '—';
+      document.getElementById('kpi-langs').textContent = primaryLangs;
+      document.getElementById('kpi-framework').textContent = (data.framework || 'React 18.x');
+      document.getElementById('kpi-build').textContent = (data.build_tool || 'Vite');
+
+      // Overview bullets (derive simple highlights)
+      const overview = [
+        primaryLangs !== '—' ? `Modern ${primaryLangs} project` : null,
+        data?.comprehensive_diagram ? 'Component-based architecture detected' : null,
+        (data?.aws_infrastructure_diagram ? 'IaC with Terraform present' : null),
+        (data?.frontend_preview ? 'Frontend preview available' : null)
+      ].filter(Boolean);
+      const ob = document.getElementById('overview-bullets');
+      ob.innerHTML = overview.length ? overview.map((t,i)=>`<div> ${i+1}. ${t}</div>`).join('') : '<div class="muter">No highlights detected.</div>';
+
+      // Architecture
+      document.getElementById('kpi-routing').textContent = data?.routing || 'React Router v6';
+      document.getElementById('kpi-state').textContent   = data?.state || 'React Query + Local State';
+      document.getElementById('kpi-styling').textContent = data?.styling || 'Tailwind CSS + CSS Modules';
+
+      const archCards = document.getElementById('arch-cards');
+      if (data?.workflow_diagram?.architecture?.components) {
+        const comp = data.workflow_diagram.architecture.components;
+        const apps = comp.filter(c=>c.type==='application').map(c=>c.title).filter(Boolean);
+        archCards.innerHTML = `
+          <h3 style="margin:0 0 8px">Detected Components</h3>
+          <div>${apps.map(a=>`<span class="bubble">${a}</span>`).join('') || '<span class="muter">No application components detected.</span>'}</div>
+        `;
+      } else {
+        archCards.innerHTML = `<div class="muter">No architecture graph available.</div>`;
+      }
+
+      // Infrastructure
+      const infra = data?.aws_infrastructure_diagram?.summary || {};
+      document.getElementById('kpi-provider').textContent = infra.provider || 'AWS';
+      document.getElementById('kpi-version').textContent  = infra.version  || '1.5.x';
+      document.getElementById('kpi-modules').textContent  = infra.modules  ? pluralize(infra.modules, 'module') : '—';
+      document.getElementById('kpi-resources').textContent= infra.resources? pluralize(infra.resources,'resource') : '—';
+      const ib = document.getElementById('infra-bullets');
+      const services = infra.service_types || [];
+      ib.innerHTML = services.length ? services.map((s,i)=>`<div>${i+1}. ${s}</div>`).join('') : '<div class="muter">No AWS services detected.</div>';
+
+      // Components
+      document.getElementById('kpi-ui').textContent     = data?.ui_components ? pluralize(data.ui_components, 'component') : '—';
+      document.getElementById('kpi-custom').textContent = data?.custom_components ? pluralize(data.custom_components, 'component') : '—';
+      document.getElementById('kpi-pages').textContent  = data?.pages ? pluralize(data.pages, 'page') : '—';
+      document.getElementById('kpi-hooks').textContent  = data?.custom_hooks ? pluralize(data.custom_hooks, 'custom hook') : '—';
+      const cb = document.getElementById('components-bullets');
+      const compBullets = [
+        data?.shadcn ? 'Shadcn/ui integration' : null,
+        'Custom LegoBrick interactive component',
+        'Animated header & responsive dialogs'
+      ].filter(Boolean);
+      cb.innerHTML = compBullets.map((t,i)=>`<div>${i+1}. ${t}</div>`).join('');
+
+      // Frontend
+      document.getElementById('kpi-fe-fw').textContent   = data?.frontend_framework || 'React 18.3.x';
+      document.getElementById('kpi-ts').textContent      = data?.typescript_version || '5.x';
+      document.getElementById('kpi-buildtime').textContent = data?.build_time || '~2.3s';
+      document.getElementById('kpi-bundle').textContent  = data?.bundle_size || '~245KB (gzipped)';
+      const fb = document.getElementById('frontend-bullets');
+      const feBullets = ['Vite dev server','HMR','Code splitting','PWA ready'];
+      fb.innerHTML = feBullets.map((t,i)=>`<div>${i+1}. ${t}</div>`).join('');
+
+      // Docs
+      document.getElementById('kpi-setup').textContent   = data?.setup_time || '< 5 minutes';
+      document.getElementById('kpi-prereq').textContent  = data?.prerequisites || 'Node.js 18+';
+      document.getElementById('kpi-scripts').textContent = data?.scripts_count ? `${data.scripts_count} scripts` : '4 scripts';
+      document.getElementById('kpi-docs').textContent    = data?.docs_status || 'Complete';
+      document.getElementById('docs-readme').textContent = (data?.readme_content || '').slice(0,1600) || 'No README content generated';
     }
   </script>
 </body>

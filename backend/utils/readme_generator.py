@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import os
 import boto3
 import json
+from .cost_estimator import estimate_costs_for_services
 
 # Load .env variables
 load_dotenv()
@@ -13,6 +14,9 @@ def generate_readme(languages, services, file_details, project_name):
     description, file_explanations, architecture_overview, setup_instructions = generate_bedrock_readme_content(
         languages, services, file_details, project_name
     )
+    
+    # Generate cost estimates
+    cost_estimates = estimate_costs_for_services(services)
 
     # Build comprehensive README
     readme = f"# {project_name}\n\n"
@@ -27,6 +31,7 @@ def generate_readme(languages, services, file_details, project_name):
     readme += "- [File Structure](#file-structure)\n"
     readme += "- [Setup & Installation](#setup--installation)\n"
     readme += "- [Usage](#usage)\n"
+    readme += "- [Cost Estimation](#cost-estimation)\n"
     readme += "- [API Documentation](#api-documentation)\n"
     readme += "- [Contributing](#contributing)\n\n"
     
@@ -54,6 +59,9 @@ def generate_readme(languages, services, file_details, project_name):
     
     # Usage
     readme += generate_usage_section(languages, services)
+    
+    # Cost Estimation
+    readme += generate_cost_estimation_section(cost_estimates)
     
     # API Documentation
     readme += generate_api_documentation(services)
@@ -411,6 +419,30 @@ def generate_quick_start(languages, services):
         steps.append("```bash\n# Build and run with Docker\ndocker build -t app .\ndocker run -p 8000:8000 -p 3000:3000 app\n```\n\n")
     
     return "".join(steps) if steps else "No specific setup instructions available."
+
+def generate_cost_estimation_section(cost_estimates):
+    """Generate cost estimation section for README."""
+    if not cost_estimates or not cost_estimates.get('service_estimates'):
+        return "## Cost Estimation\n\nNo cost data available for this project.\n\n"
+    
+    section = "## Cost Estimation\n\n"
+    section += "💰 **Projected Monthly Costs**: " + cost_estimates['total_costs']['monthly_range'] + "\n"
+    section += "📅 **Projected Yearly Costs**: " + cost_estimates['total_costs']['yearly_range'] + "\n\n"
+    
+    section += "### Service Breakdown\n\n"
+    section += "| Service | Monthly Cost | Yearly Cost | Usage Detected |\n"
+    section += "|---------|--------------|-------------|----------------|\n"
+    
+    for service in cost_estimates['service_estimates'][:10]:
+        section += f"| {service['service']} | {service['monthly_cost_range']} | {service['yearly_cost_range']} | {service['usage_detected']}x |\n"
+    
+    section += "\n### Cost Optimization Tips\n\n"
+    for i, rec in enumerate(cost_estimates.get('recommendations', [])[:5], 1):
+        section += f"{i}. {rec}\n"
+    
+    section += "\n**Note**: These are estimated costs based on typical usage patterns. Actual costs may vary significantly based on your specific usage, region, and pricing changes. Always refer to official pricing calculators for accurate estimates.\n\n"
+    
+    return section
 
 def generate_smart_fallback_description(languages, services, file_details, project_name):
     """Fallback description if Bedrock is unavailable."""
