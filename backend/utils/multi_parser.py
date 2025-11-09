@@ -13,7 +13,7 @@ LANGUAGE_MAP = {
     '.sh': 'Shell', '.bash': 'Bash', '.dockerfile': 'Docker', '.sql': 'SQL'
 }
 
-from .auto_service_detector import detect_all_services
+from .auto_service_detector import detect_all_services, detect_all_services_with_references
 from .auto_language_detector import auto_detect_languages
 
 def detect_language_and_services(folder_path):
@@ -78,6 +78,60 @@ def detect_language_and_services(folder_path):
     services = detect_all_services(folder_path)
     
     return languages, services, connections, file_details
+
+def detect_language_and_services_with_references(folder_path):
+    """Enhanced version that includes service code references."""
+    connections = []
+    file_details = []
+    
+    for root, _, files in os.walk(folder_path):
+        for file in files:
+            full_path = os.path.join(root, file)
+            relative_path = os.path.relpath(full_path, folder_path)
+            ext = os.path.splitext(file)[1].lower()
+            
+            if ext in ['.exe', '.bin', '.so', '.dll', '.zip', '.tar', '.gz']:
+                continue
+            
+            try:
+                with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                
+                from .auto_language_detector import detect_language_from_content, detect_language_from_shebang
+                file_languages = []
+                
+                shebang_lang = detect_language_from_shebang(content)
+                if shebang_lang:
+                    file_languages.append(shebang_lang)
+                else:
+                    detected_langs = detect_language_from_content(content, file)
+                    file_languages.extend(detected_langs)
+                    
+                    if not detected_langs and ext in LANGUAGE_MAP:
+                        file_languages.append(LANGUAGE_MAP[ext])
+                
+                from .auto_service_detector import auto_detect_services
+                file_services = auto_detect_services(content)
+                
+                if file_languages or file_services:
+                    file_details.append({
+                        'file': relative_path,
+                        'languages': file_languages,
+                        'services': list(file_services.keys())
+                    })
+                
+                if ext == '.py':
+                    connections.extend(parse_python_imports(content, file))
+                elif ext == '.tf':
+                    connections.extend(parse_terraform_deps(content, file))
+                    
+            except Exception:
+                continue
+    
+    languages = auto_detect_languages(folder_path)
+    services_with_refs = detect_all_services_with_references(folder_path)
+    
+    return languages, services_with_refs, connections, file_details
 
 def parse_python_imports(content, filename):
     """Extract Python import relationships."""

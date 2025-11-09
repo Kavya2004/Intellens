@@ -4,13 +4,15 @@ from fastapi.responses import JSONResponse, FileResponse
 import os, zipfile, shutil, tempfile
 from utils.parser import parse_terraform_files
 from utils.diagram_builder import build_graph_json
-from utils.multi_parser import detect_language_and_services
+from utils.multi_parser import detect_language_and_services, detect_language_and_services_with_references
 from utils.enhanced_diagram_builder import build_comprehensive_diagram
 from utils.workflow_diagram_builder import build_workflow_diagram, generate_mermaid_workflow
 from utils.terraform_diagram_generator import generate_terraform_diagram, generate_terraform_hcl
 from utils.aws_diagram_generator import AWSInfrastructureDiagramGenerator
 from utils.readme_generator import generate_readme
 from utils.frontend_preview_generator import generate_frontend_preview
+from utils.layered_diagram_generator import generate_layered_architecture_diagram
+from utils.project_overview_generator import generate_project_overview
 
 app = FastAPI(title="Intellens")
 
@@ -38,8 +40,11 @@ async def upload_project(file: UploadFile = File(...)):
     with zipfile.ZipFile(temp_path, "r") as zip_ref:
         zip_ref.extractall(extract_dir)
 
-    # Parse all files for languages and services
-    languages, services, all_connections, file_details = detect_language_and_services(extract_dir)
+    # Parse all files for languages and services with references
+    languages, services_with_refs, all_connections, file_details = detect_language_and_services_with_references(extract_dir)
+    
+    # Convert to legacy format for backward compatibility
+    services = {name: data['count'] for name, data in services_with_refs.items()}
     
     # Also parse Terraform specifically for backward compatibility
     tf_services, tf_connections = parse_terraform_files(extract_dir)
@@ -72,6 +77,12 @@ async def upload_project(file: UploadFile = File(...)):
     # Generate frontend preview
     frontend_preview = generate_frontend_preview(languages, services, file_details)
     
+    # Generate layered architecture diagram
+    layered_diagram = generate_layered_architecture_diagram(languages, services, file.filename.split('.')[0], file_details)
+    
+    # Generate project overview
+    project_overview = generate_project_overview(languages, services, file_details, file.filename.split('.')[0])
+    
     # Save README to project (create a downloadable version)
     readme_filename = f"{file.filename.split('.')[0]}_README.md"
     readme_path = os.path.join(UPLOAD_DIR, readme_filename)
@@ -95,11 +106,14 @@ async def upload_project(file: UploadFile = File(...)):
         "aws_infrastructure_diagram": aws_infrastructure_data,
         "languages": languages,
         "services": services,
+        "services_with_references": services_with_refs,
         "terraform_services": tf_services,
         "file_details": file_details,
         "readme_content": readme_content,
         "readme_filename": readme_filename,
-        "frontend_preview": frontend_preview
+        "frontend_preview": frontend_preview,
+        "layered_diagram": layered_diagram,
+        "project_overview": project_overview
     }
     
     return JSONResponse(content=response_data, media_type="application/json; charset=utf-8")
