@@ -515,6 +515,7 @@
     <h2>Generated README</h2>
     <div style="display:flex;gap:12px;margin-bottom:16px">
       <button class="btn" onclick="copyReadme()">Copy</button>
+      <button class="btn" onclick="toggleReadmePreview()">Preview</button>
       <button class="btn" onclick="downloadReadme()">Download</button>
     </div>
     <pre id="readme-content" style="background:#f8f9fa;border-radius:10px;padding:14px;white-space:pre-wrap;font-family:monospace;font-size:13px;margin-top:12px;"></pre>
@@ -866,6 +867,38 @@
       a.href = `http://localhost:8000/download-readme/${window.currentReadmeFilename}`;
       a.download = 'README.md';
       a.click();
+    }
+    function toggleReadmePreview(){
+      const content = document.getElementById('readme-content');
+      const isRaw = content.style.whiteSpace === 'pre-wrap';
+      if(isRaw){
+        let html = content.textContent
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+          .replace(/^- (.*$)/gm, '<li>$1</li>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+        
+        // Convert markdown tables to HTML
+        html = html.replace(/(\|[^\n]+\|\n\|[:\-\s\|]+\|\n(?:\|[^\n]+\|\n?)*)/g, (match) => {
+          const lines = match.trim().split('\n');
+          const headers = lines[0].split('|').slice(1, -1).map(h => h.trim());
+          const rows = lines.slice(2).map(row => row.split('|').slice(1, -1).map(cell => cell.trim()));
+          
+          return `<table style="border-collapse:collapse;width:100%;margin:10px 0">
+            <thead><tr>${headers.map(h => `<th style="border:1px solid #ddd;padding:8px;background:#f5f5f5">${h}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(row => `<tr>${row.map(cell => `<td style="border:1px solid #ddd;padding:8px">${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table>`;
+        });
+        
+        content.innerHTML = html.replace(/\n/g, '<br>');
+        content.style.whiteSpace = 'normal';
+      }else{
+        content.textContent = analysisData?.readme_content || 'No README content';
+        content.style.whiteSpace = 'pre-wrap';
+      }
     }
     function openInsights(){
       populateInsights(analysisData || {});

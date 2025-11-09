@@ -430,8 +430,8 @@ def generate_cost_estimation_section(cost_estimates):
     section += "📅 **Projected Yearly Costs**: " + cost_estimates['total_costs']['yearly_range'] + "\n\n"
     
     section += "### Service Breakdown\n\n"
-    section += "| Service | Monthly Cost | Yearly Cost | Usage Detected |\n"
-    section += "|---------|--------------|-------------|----------------|\n"
+    section += "\n| Service | Monthly Cost | Yearly Cost | Usage Detected |\n"
+    section += "| :------: |:------------:| :-----------:| :--------------:|\n"
     
     for service in cost_estimates['service_estimates'][:10]:
         section += f"| {service['service']} | {service['monthly_cost_range']} | {service['yearly_cost_range']} | {service['usage_detected']}x |\n"
